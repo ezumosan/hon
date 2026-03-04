@@ -158,11 +158,6 @@ export async function assignBookToShelf(
 
   if (bookErr || !book) return { error: "本が見つかりません" };
 
-  // この本自体が既に同じ棚に入っている場合
-  if (book.shelf_id === shelfId) {
-    return { error: "この本は既にこの本棚に入庫されています" };
-  }
-
   // この本がまだ棚に入っていない場合 → そのまま入庫
   if (!book.shelf_id) {
     const { error } = await supabase
@@ -175,87 +170,103 @@ export async function assignBookToShelf(
     return {};
   }
 
-  // この本が既に別の棚にある場合 → 品数チェック
+  // この本が既に棚にある場合 → 品数チェックして2冊目以降の入庫を判断
   const quantity = book.quantity || 1;
 
-  if (quantity <= 1) {
-    // 所有1冊なのに既に棚にある → 移動のみ許可
-    return {
-      error: `この本は既に別の本棚に入庫済みです (所有数: ${quantity}冊)。移動する場合は一度出庫してください。`,
-    };
-  }
-
-  // quantity > 1: 同じISBNの本が他に未入庫のコピーがあるか確認
+  // 同じISBNの全コピーを取得
+  let allCopies: { id: string; shelf_id: string | null; quantity: number }[] = [{ id: book.id, shelf_id: book.shelf_id, quantity }];
   if (book.isbn_13) {
     const { data: copies } = await supabase
       .from("books")
       .select("id, shelf_id, quantity")
       .eq("isbn_13", book.isbn_13);
-
-    // 未入庫のコピーがある場合はそちらを使う
-    const unassigned = (copies || []).find((c) => !c.shelf_id && c.id !== bookId);
-    if (unassigned) {
-      const { error } = await supabase
-        .from("books")
-        .update({ shelf_id: shelfId })
-        .eq("id", unassigned.id);
-      if (error) return { error: error.message };
-
-      revalidateBookPaths(unassigned.id);
-      return { warning: "別のコピーを入庫しました" };
-    }
-
-    // 全コピーが入庫済み → 入庫済み数が合計品数未満なら、コピーを新規作成
-    const totalQuantity = (copies || []).reduce((sum, c) => sum + ((c as unknown as Book).quantity || 1), 0);
-    const shelvedCount = (copies || []).filter((c) => c.shelf_id !== null).length;
-
-    if (shelvedCount >= totalQuantity) {
-      return {
-        error: `所有数(${totalQuantity}冊)は全て入庫済みです。品数を増やすか確認してください。`,
-      };
+    if (copies && copies.length > 0) {
+      allCopies = copies as typeof allCopies;
     }
   }
 
+  // 未入庫のコピーがある場合はそちらを使う
+  const unassigned = allCopies.find((c) => !c.shelf_id && c.id !== bookId);
+  if (unassigned) {
+    const { error } = await supabase
+      .from("books")
+      .update({ shelf_id: shelfId })
+      .eq("id", unassigned.id);
+    if (error) return { error: error.message };
+
+    revalidateBookPaths(unassigned.id);
+    return { warning: "別のコピーを入庫しました" };
+  }
+
+  // 全コピーが入庫済み → 合計品数と入庫済み数を比較
+  const totalQuantity = allCopies.reduce((sum, c) => sum + (c.quantity || 1), 0);
+  const shelvedCount = allCopies.filter((c) => c.shelf_id !== null).length;
+
+  if (shelvedCount >= totalQuantity) {
+    return {
+      error: `所有数(${totalQuantity}冊)は全て入庫済みです。品数を増やすか確認してください。`,
+    };
+  }
+
   // 品数に余裕がある → コピーを分割して新しいレコードを作成
-  // 元の本のquantityを1減らし、quantity=1の新レコードを作成
+  // quantityが最も大きいコピーから1減らす
+  const sourceBook = allCopies.reduce((max, c) => (c.quantity || 1) > (max.quantity || 1) ? c : max, allCopies[0]);
+  const sourceQuantity = sourceBook.quantity || 1;
+
+  if (sourceQuantity <= 1) {
+    return {
+      error: `所有数(${totalQuantity}冊)は全て入庫済みです。品数を増やすか確認してください。`,
+    };
+  }
+
   const { error: updateErr } = await supabase
     .from("books")
-    .update({ quantity: quantity - 1 })
-    .eq("id", bookId);
+    .update({ quantity: sourceQuantity - 1 })
+    .eq("id", sourceBook.id);
   if (updateErr) return { error: updateErr.message };
 
+  // 元の本の完全データを取得（sourceBookがbookIdと異なる可能性があるため）
+  const sourceData = sourceBook.id === bookId ? book : (await supabase.from("books").select("*").eq("id", sourceBook.id).single()).data;
+  if (!sourceData) {
+    // ロールバック
+    await supabase.from("books").update({ quantity: sourceQuantity }).eq("id", sourceBook.id);
+    return { error: "データの取得に失敗しました" };
+  }
+
   const newBook: Partial<Book> = {
-    title: book.title,
-    author: book.author,
-    publisher: book.publisher,
-    published_date: book.published_date,
-    description: book.description,
-    page_count: book.page_count,
-    isbn_13: book.isbn_13,
-    isbn_10: book.isbn_10,
-    jan_code: book.jan_code,
-    cover_image_url: book.cover_image_url,
-    genre: book.genre,
-    ai_classified: book.ai_classified,
-    series_name: book.series_name,
-    series_order: book.series_order,
+    title: sourceData.title,
+    author: sourceData.author,
+    publisher: sourceData.publisher,
+    published_date: sourceData.published_date,
+    description: sourceData.description,
+    page_count: sourceData.page_count,
+    isbn_13: sourceData.isbn_13,
+    isbn_10: sourceData.isbn_10,
+    jan_code: sourceData.jan_code,
+    cover_image_url: sourceData.cover_image_url,
+    genre: sourceData.genre,
+    ai_classified: sourceData.ai_classified,
+    series_name: sourceData.series_name,
+    series_order: sourceData.series_order,
     shelf_id: shelfId,
     quantity: 1,
-    status: book.status,
-    memo: book.memo ? `${book.memo}\n[複数所有コピー]` : "[複数所有コピー]",
-    rating: book.rating,
+    status: sourceData.status,
+    memo: sourceData.memo?.includes("[複数所有コピー]")
+      ? sourceData.memo
+      : (sourceData.memo ? `${sourceData.memo}\n[複数所有コピー]` : "[複数所有コピー]"),
+    rating: sourceData.rating,
   };
 
   const { error: insertErr } = await supabase
     .from("books")
     .insert(newBook);
   if (insertErr) {
-    // ロールバック: quantityを元に戻す
-    await supabase.from("books").update({ quantity }).eq("id", bookId);
+    // ロールバック
+    await supabase.from("books").update({ quantity: sourceQuantity }).eq("id", sourceBook.id);
     return { error: insertErr.message };
   }
 
-  revalidateBookPaths(bookId);
+  revalidateBookPaths(sourceBook.id);
   return { duplicateCreated: true, warning: "複数所有のため、コピーを分割して入庫しました" };
 }
 

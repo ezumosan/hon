@@ -75,9 +75,9 @@ export default function ShelfManagePage() {
           const totalQuantity = copies.reduce((sum, c) => sum + (c.quantity || 1), 0);
           const shelvedCount = copies.filter((c) => c.shelf_id !== null).length;
 
-          // 既に全冊入庫済みの場合
+          // 既に全冊入庫済みの場合（品数に余裕がない）
           if (!unassigned && shelvedCount >= totalQuantity) {
-            const shelfNames = copies
+            const shelfInfo = copies
               .filter((c) => c.shelf_id)
               .map((c) => {
                 const s = shelves.find((s) => s.id === c.shelf_id);
@@ -85,13 +85,16 @@ export default function ShelfManagePage() {
               });
             setMessage({
               type: "error",
-              text: `「${targetBook.title}」は所有数${totalQuantity}冊が全て入庫済みです (${shelfNames.join(", ")})。品数を増やすか確認してください。`,
+              text: `「${targetBook.title}」は所有数${totalQuantity}冊が全て入庫済みです (${shelfInfo.join(", ")})。品数を増やすか確認してください。`,
             });
             setProcessing(false);
             return;
           }
 
-          const assignResult = await assignBookToShelf(targetBook.id, selectedShelf.id);
+          // 入庫対象: 未入庫があればそれ、なければquantity最大のコピーで分割入庫
+          const bookToAssign = unassigned || copies.reduce((max, c) => (c.quantity || 1) > (max.quantity || 1) ? c : max, copies[0]);
+
+          const assignResult = await assignBookToShelf(bookToAssign.id, selectedShelf.id);
           if (assignResult.error) {
             setMessage({ type: "error", text: assignResult.error });
           } else {
@@ -100,12 +103,12 @@ export default function ShelfManagePage() {
             const warningText = assignResult.warning ? ` (${assignResult.warning})` : "";
             setMessage({
               type: "success",
-              text: `「${targetBook.title}」を「${selectedShelf.name}」に入庫しました${warningText}${infoTag}`,
+              text: `「${bookToAssign.title}」を「${selectedShelf.name}」に入庫しました${warningText}${infoTag}`,
             });
             setLog((prev) => [
               {
                 id: `${Date.now()}`,
-                bookTitle: `${targetBook.title}${isDup ? " [コピー]" : ""}`,
+                bookTitle: `${bookToAssign.title}${isDup ? " [コピー]" : ""}`,
                 shelfName: selectedShelf.name,
                 action: "checkin",
                 time: new Date().toLocaleTimeString("ja-JP"),
