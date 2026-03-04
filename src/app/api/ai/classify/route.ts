@@ -54,6 +54,7 @@ export async function POST(request: NextRequest) {
   // バッチ処理（最大20冊ずつ）
   const BATCH_SIZE = 20;
   const results: ClassifyResult[] = [];
+  const errors: string[] = [];
 
   for (let i = 0; i < books.length; i += BATCH_SIZE) {
     const batch = books.slice(i, i + BATCH_SIZE);
@@ -87,7 +88,7 @@ ${bookList}
 ]`;
 
     try {
-      const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-preview-05-20" });
+      const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
       const result = await model.generateContent(prompt);
       const responseText = result.response.text();
 
@@ -118,7 +119,9 @@ ${bookList}
         });
       }
     } catch (e) {
-      console.error("Gemini API error:", e);
+      const errMsg = e instanceof Error ? e.message : String(e);
+      console.error("Gemini API error:", errMsg);
+      errors.push(`Batch ${Math.floor(i / BATCH_SIZE) + 1}: ${errMsg}`);
       // バッチが失敗しても残りは続行
       continue;
     }
@@ -141,8 +144,9 @@ ${bookList}
   }
 
   return NextResponse.json({
-    message: `${updated}冊を分類しました`,
+    message: updated > 0 ? `${updated}冊を分類しました` : errors.length > 0 ? `AI分類に失敗しました: ${errors[0]}` : "分類対象がありません",
     processed: updated,
     total: books.length,
+    ...(errors.length > 0 && { errors }),
   });
 }
