@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
-import MobileNav from "@/components/MobileNav";
 import ThemeToggleButton from "@/components/ThemeToggleButton";
 
 export const metadata: Metadata = {
@@ -57,8 +56,10 @@ export default function RootLayout({
                 <ThemeToggleButton />
               </nav>
 
-              {/* モバイルハンバーガーメニュー */}
-              <MobileNav />
+              {/* モバイル: テーマ切替のみ */}
+              <div className="sm:hidden">
+                <ThemeToggleButton />
+              </div>
             </div>
           </header>
 
