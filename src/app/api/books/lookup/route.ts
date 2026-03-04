@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from "next/server";
 // 検索優先順:
 //   1. openBD (日本語書籍に強い、無料、認証不要)
 //   2. Google Books API (洋書・幅広いカバレッジ)
+//   3. 国立国会図書館サーチ (NDL Search) - 日本の出版物をほぼ網羅
 // ============================================================
 
 type BookInfo = {
@@ -118,6 +119,94 @@ async function fetchFromGoogleBooks(code: string): Promise<BookInfo | null> {
   }
 }
 
+// ---- 国立国会図書館サーチ (NDL Search) ----
+function extractXmlTag(xml: string, tag: string): string | null {
+  // namespace prefix 付きのタグも対応 (例: dc:title, dcterms:issued)
+  const patterns = [
+    new RegExp(`<${tag}[^>]*>([^<]+)</${tag}>`, "i"),
+    new RegExp(`<${tag}[^>]*><!\\[CDATA\\[([^\\]]+)\\]\\]></${tag}>`, "i"),
+  ];
+  for (const re of patterns) {
+    const match = xml.match(re);
+    if (match) return match[1].trim();
+  }
+  return null;
+}
+
+function extractAllXmlTags(xml: string, tag: string): string[] {
+  const re = new RegExp(`<${tag}[^>]*>([^<]+)</${tag}>`, "gi");
+  const results: string[] = [];
+  let match;
+  while ((match = re.exec(xml)) !== null) {
+    results.push(match[1].trim());
+  }
+  return results;
+}
+
+async function fetchFromNDL(isbn: string): Promise<BookInfo | null> {
+  try {
+    const res = await fetch(
+      `https://ndlsearch.ndl.go.jp/api/opensearch?isbn=${isbn}`,
+      { next: { revalidate: 86400 } }
+    );
+    if (!res.ok) return null;
+
+    const xml = await res.text();
+
+    // 検索結果なし
+    const totalResults = extractXmlTag(xml, "openSearch:totalResults");
+    if (!totalResults || totalResults === "0") return null;
+
+    // <item>…</item> を抽出
+    const itemMatch = xml.match(/<item>([\s\S]*?)<\/item>/);
+    if (!itemMatch) return null;
+    const item = itemMatch[1];
+
+    // タイトル
+    const title = extractXmlTag(item, "dc:title") || extractXmlTag(item, "title") || "";
+
+    // 著者（dc:creator を全て取得）
+    const creators = extractAllXmlTags(item, "dc:creator");
+    // 姓名の間のカンマを除去して整形
+    const author = creators
+      .map((c) => c.replace(/,\s*/g, " ").trim())
+      .join(", ");
+
+    // 出版社
+    const publisher = extractXmlTag(item, "dc:publisher") || "";
+
+    // 出版日
+    const publishedDate =
+      extractXmlTag(item, "dcterms:issued") ||
+      extractXmlTag(item, "dc:date") ||
+      "";
+
+    // 説明
+    const descriptions = extractAllXmlTags(item, "dc:description");
+    const description = descriptions.join(" ");
+
+    // openBD から書影を試みる（NDLは書影を提供しない）
+    let coverUrl = "";
+    if (isbn.length === 13) {
+      coverUrl = `https://cover.openbd.jp/${isbn}.jpg`;
+    }
+
+    return {
+      title,
+      author,
+      publisher,
+      published_date: publishedDate,
+      description,
+      page_count: null,
+      isbn_13: isbn,
+      isbn_10: null,
+      cover_image_url: coverUrl,
+    };
+  } catch {
+    return null;
+  }
+}
+
 // ---- Route Handler ----
 export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get("code");
@@ -137,6 +226,11 @@ export async function GET(request: NextRequest) {
   // 2) openBD でヒットしなければ Google Books
   if (!bookInfo) {
     bookInfo = await fetchFromGoogleBooks(cleaned);
+  }
+
+  // 3) それでもなければ国立国会図書館サーチ
+  if (!bookInfo) {
+    bookInfo = await fetchFromNDL(cleaned);
   }
 
   if (!bookInfo) {
