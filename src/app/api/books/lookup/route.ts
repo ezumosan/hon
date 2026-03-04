@@ -66,9 +66,9 @@ async function fetchFromOpenBD(isbn: string): Promise<BookInfo | null> {
       if (extent) pageCount = parseInt(extent.ExtentValue, 10) || null;
     }
 
-    // 書影がない場合 Google Books の書影を代替として設定
+    // 書影がない場合 NDL サムネイルを代替として設定
     if (!coverUrl && isbn.length === 13) {
-      coverUrl = `https://books.google.com/books/content?id=&printsec=frontcover&img=1&zoom=1&source=gbs_api&vid=ISBN${isbn}`;
+      coverUrl = `https://ndlsearch.ndl.go.jp/thumbnail/${isbn}.jpg`;
     }
 
     return {
@@ -193,11 +193,10 @@ async function fetchFromNDL(isbn: string): Promise<BookInfo | null> {
     const descriptions = extractAllXmlTags(item, "dc:description");
     const description = descriptions.join(" ");
 
-    // 複数ソースから書影を試みる（NDLは書影を提供しない）
+    // NDL 自身はメタデータのみ返すが、NDL サムネイルサービスは利用可能
     let coverUrl = "";
     if (isbn.length === 13) {
-      // Google Books の書影を優先（教科書等でも取得できる可能性が高い）
-      coverUrl = `https://books.google.com/books/content?id=&printsec=frontcover&img=1&zoom=1&source=gbs_api&vid=ISBN${isbn}`;
+      coverUrl = `https://ndlsearch.ndl.go.jp/thumbnail/${isbn}.jpg`;
     }
 
     return {
@@ -491,9 +490,9 @@ export async function GET(request: NextRequest) {
     // (検定教科書・同人誌など一般DBに未登録の書籍向け)
     // ISBN 出版者記号から出版社名を自動特定する
     const guessedPublisher = guessPublisherFromISBN(cleaned);
-    // 書影も試行（Google Books の ISBN ベース書影 URL）
+    // 書影も試行（NDL サムネイル）
     const fallbackCover = cleaned.length === 13
-      ? `https://books.google.com/books/content?id=&printsec=frontcover&img=1&zoom=1&source=gbs_api&vid=ISBN${cleaned}`
+      ? `https://ndlsearch.ndl.go.jp/thumbnail/${cleaned}.jpg`
       : "";
     bookInfo = {
       title: guessedPublisher
