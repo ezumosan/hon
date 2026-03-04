@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import BarcodeScanner from "@/components/BarcodeScanner";
 import { assignBookToShelf, removeBookFromShelf, getBookByIsbn } from "@/lib/actions/books";
-import { getShelfByBarcode } from "@/lib/actions/shelves";
+import { getShelfByBarcode, getShelves } from "@/lib/actions/shelves";
+import type { Shelf } from "@/types/book";
 
 type Mode = "checkin" | "checkout";
 type Step = "scan-shelf" | "scan-book" | "done";
@@ -23,6 +24,12 @@ export default function ShelfManagePage() {
   const [message, setMessage] = useState<{ type: "success" | "error" | "info"; text: string } | null>(null);
   const [processing, setProcessing] = useState(false);
   const [log, setLog] = useState<LogEntry[]>([]);
+  const [shelves, setShelves] = useState<Shelf[]>([]);
+  const [manualIsbn, setManualIsbn] = useState("");
+
+  useEffect(() => {
+    getShelves().then((r) => setShelves(r.shelves));
+  }, []);
 
   const handleScan = useCallback(
     async (code: string) => {
@@ -121,6 +128,25 @@ export default function ShelfManagePage() {
     setMessage(null);
   }
 
+  // 手動で本棚を選択
+  function handleManualShelfSelect(shelfId: string) {
+    const shelf = shelves.find((s) => s.id === shelfId);
+    if (shelf) {
+      setSelectedShelf({ id: shelf.id, name: shelf.name });
+      setStep("scan-book");
+      setMessage({ type: "info", text: `本棚「${shelf.name}」を選択しました。本のバーコードをスキャンまたは入力してください。` });
+    }
+  }
+
+  // 手動ISBN入力で入出庫
+  async function handleManualIsbn(e: React.FormEvent) {
+    e.preventDefault();
+    const cleaned = manualIsbn.replace(/[^0-9]/g, "");
+    if (cleaned.length < 10) return;
+    setManualIsbn("");
+    await handleScan(cleaned);
+  }
+
   return (
     <div className="mx-auto max-w-lg animate-fade-in">
       <a
@@ -180,15 +206,58 @@ export default function ShelfManagePage() {
       {/* ガイドメッセージ */}
       <div className="mb-4 rounded-xl bg-muted px-4 py-3 text-sm text-muted-foreground">
         {mode === "checkin" && step === "scan-shelf" && (
-          <p>1. まず本棚のバーコード（SHELF-で始まるコード）をスキャンしてください</p>
+          <p>1. 本棚をバーコードスキャンまたは一覧から選択してください</p>
         )}
         {mode === "checkin" && step === "scan-book" && (
-          <p>2. 入庫する本のバーコード（ISBN）をスキャンしてください（連続スキャン可能）</p>
+          <p>2. 入庫する本のバーコードをスキャンまたはISBNを入力してください（連続可能）</p>
         )}
         {mode === "checkout" && (
-          <p>出庫する本のバーコード（ISBN）をスキャンしてください</p>
+          <p>出庫する本のバーコードをスキャンまたはISBNを入力してください</p>
         )}
       </div>
+
+      {/* 手動本棚選択（入庫モード + 本棚未選択時） */}
+      {mode === "checkin" && step === "scan-shelf" && shelves.length > 0 && (
+        <div className="mb-4 rounded-xl border border-border bg-card p-4">
+          <label className="mb-2 block text-sm font-medium text-muted-foreground">本棚を一覧から選択</label>
+          <select
+            onChange={(e) => e.target.value && handleManualShelfSelect(e.target.value)}
+            defaultValue=""
+            className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none"
+          >
+            <option value="">本棚を選択...</option>
+            {shelves.map((s) => (
+              <option key={s.id} value={s.id}>{s.name}{s.location ? ` (${s.location})` : ""}</option>
+            ))}
+          </select>
+          <p className="mt-2 text-center text-xs text-muted-foreground">または本棚のバーコードをスキャン</p>
+        </div>
+      )}
+
+      {/* 手動ISBN入力（本のスキャンステップ時） */}
+      {((mode === "checkin" && step === "scan-book") || mode === "checkout") && (
+        <form onSubmit={handleManualIsbn} className="mb-4 rounded-xl border border-border bg-card p-4">
+          <label className="mb-2 block text-sm font-medium text-muted-foreground">ISBNを手動入力</label>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={manualIsbn}
+              onChange={(e) => setManualIsbn(e.target.value)}
+              placeholder="ISBNを入力 (13桁 or 10桁)"
+              inputMode="numeric"
+              className="flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+            />
+            <button
+              type="submit"
+              disabled={processing || manualIsbn.replace(/[^0-9]/g, "").length < 10}
+              className="rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
+            >
+              {mode === "checkin" ? "入庫" : "出庫"}
+            </button>
+          </div>
+          <p className="mt-2 text-center text-xs text-muted-foreground">またはバーコードをスキャン</p>
+        </form>
+      )}
 
       {/* スキャナー */}
       <BarcodeScanner
