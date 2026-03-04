@@ -66,6 +66,11 @@ async function fetchFromOpenBD(isbn: string): Promise<BookInfo | null> {
       if (extent) pageCount = parseInt(extent.ExtentValue, 10) || null;
     }
 
+    // 書影がない場合 Google Books の書影を代替として設定
+    if (!coverUrl && isbn.length === 13) {
+      coverUrl = `https://books.google.com/books/content?id=&printsec=frontcover&img=1&zoom=1&source=gbs_api&vid=ISBN${isbn}`;
+    }
+
     return {
       title: summary.title || "",
       author,
@@ -188,10 +193,11 @@ async function fetchFromNDL(isbn: string): Promise<BookInfo | null> {
     const descriptions = extractAllXmlTags(item, "dc:description");
     const description = descriptions.join(" ");
 
-    // openBD から書影を試みる（NDLは書影を提供しない）
+    // 複数ソースから書影を試みる（NDLは書影を提供しない）
     let coverUrl = "";
     if (isbn.length === 13) {
-      coverUrl = `https://cover.openbd.jp/${isbn}.jpg`;
+      // Google Books の書影を優先（教科書等でも取得できる可能性が高い）
+      coverUrl = `https://books.google.com/books/content?id=&printsec=frontcover&img=1&zoom=1&source=gbs_api&vid=ISBN${isbn}`;
     }
 
     return {
@@ -485,6 +491,10 @@ export async function GET(request: NextRequest) {
     // (検定教科書・同人誌など一般DBに未登録の書籍向け)
     // ISBN 出版者記号から出版社名を自動特定する
     const guessedPublisher = guessPublisherFromISBN(cleaned);
+    // 書影も試行（Google Books の ISBN ベース書影 URL）
+    const fallbackCover = cleaned.length === 13
+      ? `https://books.google.com/books/content?id=&printsec=frontcover&img=1&zoom=1&source=gbs_api&vid=ISBN${cleaned}`
+      : "";
     bookInfo = {
       title: guessedPublisher
         ? `${guessedPublisher}の書籍 (ISBN: ${cleaned})`
@@ -498,7 +508,7 @@ export async function GET(request: NextRequest) {
       page_count: null,
       isbn_13: cleaned.length === 13 ? cleaned : null,
       isbn_10: cleaned.length === 10 ? cleaned : null,
-      cover_image_url: "",
+      cover_image_url: fallbackCover,
       _partial: true,
     };
   }

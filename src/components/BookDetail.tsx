@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import type { Book, BookUpdate } from "@/types/book";
 import { GENRES } from "@/types/book";
 import { updateBook, deleteBook } from "@/lib/actions/books";
+import BookCoverImage from "@/components/BookCoverImage";
 
 const STATUS_LABELS: Record<string, string> = {
   unread: "未読",
@@ -96,13 +97,12 @@ export default function BookDetail({ book }: { book: Book }) {
           {/* Cover */}
           <div className="flex-shrink-0">
             <div className="relative aspect-[2/3] w-40 overflow-hidden rounded-xl bg-muted shadow-lg">
-              {book.cover_image_url ? (
-                <img src={book.cover_image_url} alt={book.title} className="h-full w-full object-cover" />
-              ) : (
-                <div className="flex h-full items-center justify-center text-muted-foreground">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-16 w-16"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20" /></svg>
-                </div>
-              )}
+              <BookCoverImage
+                src={book.cover_image_url}
+                isbn={book.isbn_13}
+                alt={book.title}
+                iconSize="lg"
+              />
             </div>
           </div>
 

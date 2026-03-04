@@ -5,6 +5,7 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Book } from "@/types/book";
 import { GENRES } from "@/types/book";
+import BookCoverImage from "@/components/BookCoverImage";
 
 const STATUS_LABELS: Record<string, string> = {
   unread: "未読",
@@ -151,17 +152,12 @@ export default function BookList({ books }: Props) {
                   className="card-hover group block rounded-2xl border border-border bg-card p-3"
                 >
                   <div className="relative mb-3 aspect-[2/3] overflow-hidden rounded-lg bg-muted">
-                    {book.cover_image_url ? (
-                      <img
-                        src={book.cover_image_url}
-                        alt={book.title}
-                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                      />
-                    ) : (
-                      <div className="flex h-full items-center justify-center text-muted-foreground">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-10 w-10"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20" /></svg>
-                      </div>
-                    )}
+                    <BookCoverImage
+                      src={book.cover_image_url}
+                      isbn={book.isbn_13}
+                      alt={book.title}
+                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    />
                     {/* Status badge */}
                     <span
                       className={`absolute right-1.5 top-1.5 rounded-full px-2 py-0.5 text-[10px] font-medium ${STATUS_COLORS[book.status]}`}
