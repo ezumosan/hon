@@ -77,8 +77,9 @@ function generateBarcodeSVG(text: string, width: number = 300, height: number = 
     }
   }
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height + 18}" width="${width}" height="${height + 18}">
     ${bars}
+    <text x="${width / 2}" y="${height + 14}" text-anchor="middle" font-family="monospace" font-size="11" fill="#333">${text}</text>
   </svg>`;
 }
 
@@ -145,24 +146,41 @@ export async function GET(request: NextRequest) {
     }
     .barcode { max-width: 50mm; margin: 0 auto; }
     .barcode svg { width: 100%; height: auto; }
-    .print-btn {
+    .toolbar {
       position: fixed; top: 10px; right: 10px;
+      display: flex; gap: 8px; z-index: 10;
+    }
+    .toolbar button {
       padding: 8px 20px; background: #2563eb; color: white;
       border: none; border-radius: 8px; cursor: pointer;
-      font-size: 14px; z-index: 10;
+      font-size: 14px;
     }
+    .toolbar button:hover { background: #1d4ed8; }
     @media print {
-      .print-btn { display: none; }
+      .toolbar { display: none; }
       body { padding: 5mm; }
       .card { border-color: #eee; }
     }
   </style>
 </head>
 <body>
-  <button class="print-btn" onclick="window.print()">印刷する</button>
+  <div class="toolbar">
+    <button onclick="window.print()">印刷する</button>
+    <button onclick="downloadPDF()">ダウンロード</button>
+  </div>
   <div class="cards">
     ${barcodeCards}
   </div>
+  <script>
+    function downloadPDF() {
+      // ブラウザの印刷機能でPDF保存を促す
+      const style = document.createElement('style');
+      style.textContent = '@media print { .toolbar { display: none !important; } }';
+      document.head.appendChild(style);
+      window.print();
+      document.head.removeChild(style);
+    }
+  </script>
 </body>
 </html>`;
 
