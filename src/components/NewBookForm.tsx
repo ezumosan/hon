@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { createBook } from "@/lib/actions/books";
 import type { BookInsert } from "@/types/book";
+import { GENRES } from "@/types/book";
 
 const defaultForm: BookInsert = {
   title: "",
@@ -16,6 +17,7 @@ const defaultForm: BookInsert = {
   isbn_10: null,
   jan_code: null,
   cover_image_url: "",
+  genre: "",
   status: "unread",
   memo: "",
   rating: null,
@@ -115,19 +117,22 @@ export default function NewBookForm() {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <h1 className="mb-6 text-2xl font-bold">📖 本を登録</h1>
+      <h1 className="mb-6 flex items-center gap-2 text-2xl font-bold text-foreground">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6 text-primary"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20" /></svg>
+        本を登録
+      </h1>
 
       {/* ISBN 手動検索 */}
       {!code && (
-        <div className="mb-6 rounded-lg border bg-white p-4">
-          <label className="mb-1 block text-sm font-medium text-gray-700">
+        <div className="mb-6 rounded-2xl border border-border bg-card p-4">
+          <label className="mb-1 block text-sm font-medium text-muted-foreground">
             ISBN / JAN コードで検索
           </label>
           <div className="flex gap-2">
             <input
               type="text"
               placeholder="978-4-xxx-xxxxx-x"
-              className="flex-1 rounded-lg border px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="flex-1 rounded-xl border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   e.preventDefault();
@@ -149,28 +154,28 @@ export default function NewBookForm() {
                 }
               }}
               disabled={lookupLoading}
-              className="rounded-lg bg-gray-800 px-4 py-2 text-white hover:bg-gray-900 disabled:opacity-50"
+              className="rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
             >
-              {lookupLoading ? "検索中…" : "検索"}
+              {lookupLoading ? "検索中..." : "検索"}
             </button>
           </div>
         </div>
       )}
 
       {lookupLoading && (
-        <div className="mb-4 flex items-center gap-2 text-sm text-blue-600">
-          <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
-          書籍情報を取得しています…
+        <div className="mb-4 flex items-center gap-2 text-sm text-primary">
+          <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          書籍情報を取得しています...
         </div>
       )}
 
       {/* メッセージ */}
       {message && (
         <div
-          className={`mb-4 rounded-md p-3 text-sm ${
+          className={`mb-4 rounded-xl p-3 text-sm ${
             message.type === "success"
-              ? "bg-green-50 text-green-700"
-              : "bg-red-50 text-red-700"
+              ? "bg-primary/10 text-primary"
+              : "bg-red-500/10 text-red-500"
           }`}
         >
           {message.text}
@@ -178,7 +183,7 @@ export default function NewBookForm() {
       )}
 
       {/* 登録フォーム */}
-      <form onSubmit={handleSubmit} className="space-y-4 rounded-lg border bg-white p-6">
+      <form onSubmit={handleSubmit} className="space-y-4 rounded-2xl border border-border bg-card p-6">
         {/* 書影プレビュー */}
         {form.cover_image_url && (
           <div className="flex justify-center">
@@ -192,7 +197,7 @@ export default function NewBookForm() {
 
         {/* タイトル */}
         <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">
+          <label className="mb-1 block text-sm font-medium text-muted-foreground">
             タイトル <span className="text-red-500">*</span>
           </label>
           <input
@@ -200,38 +205,38 @@ export default function NewBookForm() {
             required
             value={form.title}
             onChange={(e) => updateField("title", e.target.value)}
-            className="w-full rounded-lg border px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="w-full rounded-xl border border-border bg-background px-3 py-2 text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
           />
         </div>
 
         {/* 著者 */}
         <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">
+          <label className="mb-1 block text-sm font-medium text-muted-foreground">
             著者
           </label>
           <input
             type="text"
             value={form.author}
             onChange={(e) => updateField("author", e.target.value)}
-            className="w-full rounded-lg border px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="w-full rounded-xl border border-border bg-background px-3 py-2 text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
           />
         </div>
 
         {/* 出版社 & 出版日 */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">
+            <label className="mb-1 block text-sm font-medium text-muted-foreground">
               出版社
             </label>
             <input
               type="text"
               value={form.publisher}
               onChange={(e) => updateField("publisher", e.target.value)}
-              className="w-full rounded-lg border px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full rounded-xl border border-border bg-background px-3 py-2 text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">
+            <label className="mb-1 block text-sm font-medium text-muted-foreground">
               出版日
             </label>
             <input
@@ -239,7 +244,7 @@ export default function NewBookForm() {
               value={form.published_date}
               onChange={(e) => updateField("published_date", e.target.value)}
               placeholder="2024-01-01"
-              className="w-full rounded-lg border px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full rounded-xl border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
             />
           </div>
         </div>
@@ -247,57 +252,74 @@ export default function NewBookForm() {
         {/* ISBN / JAN */}
         <div className="grid grid-cols-3 gap-4">
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">
+            <label className="mb-1 block text-sm font-medium text-muted-foreground">
               ISBN-13
             </label>
             <input
               type="text"
               value={form.isbn_13 || ""}
               onChange={(e) => updateField("isbn_13", e.target.value || null)}
-              className="w-full rounded-lg border px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">
+            <label className="mb-1 block text-sm font-medium text-muted-foreground">
               ISBN-10
             </label>
             <input
               type="text"
               value={form.isbn_10 || ""}
               onChange={(e) => updateField("isbn_10", e.target.value || null)}
-              className="w-full rounded-lg border px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">
+            <label className="mb-1 block text-sm font-medium text-muted-foreground">
               JAN コード
             </label>
             <input
               type="text"
               value={form.jan_code || ""}
               onChange={(e) => updateField("jan_code", e.target.value || null)}
-              className="w-full rounded-lg border px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
             />
           </div>
         </div>
 
+        {/* ジャンル */}
+        <div>
+          <label className="mb-1 block text-sm font-medium text-muted-foreground">
+            ジャンル
+          </label>
+          <select
+            value={form.genre}
+            onChange={(e) => updateField("genre", e.target.value)}
+            className="w-full rounded-xl border border-border bg-background px-3 py-2 text-foreground focus:border-primary focus:outline-none"
+          >
+            <option value="">未分類</option>
+            {GENRES.map((g) => (
+              <option key={g} value={g}>{g}</option>
+            ))}
+          </select>
+        </div>
+
         {/* 概要 */}
         <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">
+          <label className="mb-1 block text-sm font-medium text-muted-foreground">
             概要
           </label>
           <textarea
             value={form.description}
             onChange={(e) => updateField("description", e.target.value)}
             rows={3}
-            className="w-full rounded-lg border px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="w-full rounded-xl border border-border bg-background px-3 py-2 text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
           />
         </div>
 
         {/* ページ数 & ステータス */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">
+            <label className="mb-1 block text-sm font-medium text-muted-foreground">
               ページ数
             </label>
             <input
@@ -309,11 +331,11 @@ export default function NewBookForm() {
                   e.target.value ? parseInt(e.target.value) : null
                 )
               }
-              className="w-full rounded-lg border px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full rounded-xl border border-border bg-background px-3 py-2 text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">
+            <label className="mb-1 block text-sm font-medium text-muted-foreground">
               読書ステータス
             </label>
             <select
@@ -324,7 +346,7 @@ export default function NewBookForm() {
                   e.target.value as "unread" | "reading" | "read"
                 )
               }
-              className="w-full rounded-lg border px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full rounded-xl border border-border bg-background px-3 py-2 text-foreground focus:border-primary focus:outline-none"
             >
               <option value="unread">未読</option>
               <option value="reading">読書中</option>
@@ -335,27 +357,27 @@ export default function NewBookForm() {
 
         {/* 表紙画像URL */}
         <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">
+          <label className="mb-1 block text-sm font-medium text-muted-foreground">
             表紙画像 URL
           </label>
           <input
             type="url"
             value={form.cover_image_url}
             onChange={(e) => updateField("cover_image_url", e.target.value)}
-            className="w-full rounded-lg border px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
           />
         </div>
 
         {/* メモ */}
         <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">
+          <label className="mb-1 block text-sm font-medium text-muted-foreground">
             メモ
           </label>
           <textarea
             value={form.memo}
             onChange={(e) => updateField("memo", e.target.value)}
             rows={2}
-            className="w-full rounded-lg border px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="w-full rounded-xl border border-border bg-background px-3 py-2 text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
           />
         </div>
 
@@ -364,13 +386,13 @@ export default function NewBookForm() {
           <button
             type="submit"
             disabled={loading}
-            className="rounded-lg bg-blue-600 px-6 py-2.5 text-white hover:bg-blue-700 disabled:opacity-50"
+            className="rounded-xl bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 disabled:opacity-50"
           >
-            {loading ? "登録中…" : "📚 登録する"}
+            {loading ? "登録中..." : "登録する"}
           </button>
           <a
             href="/books"
-            className="rounded-lg border border-gray-300 px-6 py-2.5 hover:bg-gray-100"
+            className="rounded-xl border border-border px-6 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-muted"
           >
             キャンセル
           </a>

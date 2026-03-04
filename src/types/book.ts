@@ -11,6 +11,7 @@ export type Book = {
   isbn_10: string | null;
   jan_code: string | null;
   cover_image_url: string;
+  genre: string;
   status: "unread" | "reading" | "read";
   memo: string;
   rating: number | null;
@@ -23,3 +24,23 @@ export type BookInsert = Omit<Book, "id" | "created_at" | "updated_at">;
 
 /** 更新時の入力型（全フィールド任意） */
 export type BookUpdate = Partial<BookInsert>;
+
+/** ジャンル一覧 */
+export const GENRES = [
+  "文学・小説",
+  "ビジネス・経済",
+  "自己啓発",
+  "技術・IT",
+  "科学・数学",
+  "歴史・地理",
+  "芸術・デザイン",
+  "漫画・コミック",
+  "ライトノベル",
+  "趣味・実用",
+  "教育・学参",
+  "健康・医学",
+  "料理・グルメ",
+  "旅行・ガイド",
+  "絵本・児童書",
+  "その他",
+] as const;

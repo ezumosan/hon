@@ -27,6 +27,9 @@ create table public.books (
   -- 画像
   cover_image_url text    not null default '',          -- 表紙画像 URL
 
+  -- ジャンル
+  genre       text        not null default '',          -- ジャンル（文学, ビジネス, 技術, etc.）
+
   -- 管理情報
   status      text        not null default 'unread'     -- 'unread' | 'reading' | 'read'
     check (status in ('unread', 'reading', 'read')),
@@ -73,9 +76,10 @@ create trigger set_updated_at
 
 alter table public.books enable row level security;
 
--- 認証済みユーザーに全操作を許可
-create policy "Authenticated users can do everything"
+-- 家庭内利用のため全アクセスを許可
+-- 将来認証を追加する場合は auth.role() = 'authenticated' に変更する
+create policy "Allow all access"
   on public.books
   for all
-  using (auth.role() = 'authenticated')
-  with check (auth.role() = 'authenticated');
+  using (true)
+  with check (true);

@@ -67,7 +67,11 @@ export async function deleteBook(id: string): Promise<{ error?: string }> {
 }
 
 /** 本の一覧を取得する */
-export async function getBooks(query?: string): Promise<{ books: Book[]; error?: string }> {
+export async function getBooks(opts?: {
+  query?: string;
+  genre?: string;
+  status?: string;
+}): Promise<{ books: Book[]; error?: string }> {
   const supabase = await createClient();
 
   let q = supabase
@@ -75,8 +79,16 @@ export async function getBooks(query?: string): Promise<{ books: Book[]; error?:
     .select("*")
     .order("created_at", { ascending: false });
 
-  if (query) {
-    q = q.or(`title.ilike.%${query}%,author.ilike.%${query}%`);
+  if (opts?.query) {
+    q = q.or(
+      `title.ilike.%${opts.query}%,author.ilike.%${opts.query}%,publisher.ilike.%${opts.query}%`
+    );
+  }
+  if (opts?.genre) {
+    q = q.eq("genre", opts.genre);
+  }
+  if (opts?.status) {
+    q = q.eq("status", opts.status);
   }
 
   const { data, error } = await q;

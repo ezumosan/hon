@@ -116,25 +116,25 @@ export default function BarcodeScanner({ onScanSuccess, active = true }: Props) 
       {/* カメラプレビュー領域 */}
       <div
         id={SCANNER_REGION_ID}
-        className="w-full max-w-md overflow-hidden rounded-lg border-2 border-dashed border-gray-300"
+        className="w-full max-w-md overflow-hidden rounded-xl border-2 border-dashed border-border"
         style={{ minHeight: 300 }}
       />
 
       {/* ステータス表示 */}
       {isScanning && (
-        <p className="flex items-center gap-2 text-sm text-green-600">
-          <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-green-500" />
-          スキャン中… 本のバーコードをカメラに映してください
+        <p className="flex items-center gap-2 text-sm text-primary">
+          <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-primary" />
+          スキャン中... 本のバーコードをカメラに映してください
         </p>
       )}
 
       {error && (
-        <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">
+        <div className="rounded-xl bg-red-500/10 p-3 text-sm text-red-500">
           <p className="font-medium">エラー</p>
           <p>{error}</p>
           <button
             onClick={startScanner}
-            className="mt-2 text-red-600 underline hover:text-red-800"
+            className="mt-2 text-red-500 underline hover:text-red-700 dark:hover:text-red-300"
           >
             再試行
           </button>
