@@ -16,17 +16,21 @@ export default async function ShelfDetailPage({ params }: Props) {
 
   const { books } = await getBooks({ shelfId: id });
 
-  // ジャンル別にグループ化
-  const genreGroups: Record<string, typeof books> = {};
+  // シリーズ（連載）別にグループ化
+  const seriesGroups: Record<string, typeof books> = {};
   for (const book of books) {
-    const genre = book.genre || "未分類";
-    if (!genreGroups[genre]) genreGroups[genre] = [];
-    genreGroups[genre].push(book);
+    const series = book.series_name || "その他";
+    if (!seriesGroups[series]) seriesGroups[series] = [];
+    seriesGroups[series].push(book);
   }
-  // ソート: 未分類を末尾に
-  const sortedGenres = Object.keys(genreGroups).sort((a, b) => {
-    if (a === "未分類") return 1;
-    if (b === "未分類") return -1;
+  // 各シリーズ内を巻数順にソート
+  for (const key of Object.keys(seriesGroups)) {
+    seriesGroups[key].sort((a, b) => (a.series_order ?? 9999) - (b.series_order ?? 9999));
+  }
+  // ソート: 「その他」を末尾に、それ以外は五十音順
+  const sortedSeries = Object.keys(seriesGroups).sort((a, b) => {
+    if (a === "その他") return 1;
+    if (b === "その他") return -1;
     return a.localeCompare(b, "ja");
   });
 
@@ -69,7 +73,7 @@ export default async function ShelfDetailPage({ params }: Props) {
       </div>
 
       <p className="mb-4 text-sm text-muted-foreground">
-        {books.length} 冊{sortedGenres.length > 1 && ` / ${sortedGenres.length} ジャンル`}
+        {books.length} 冊{sortedSeries.length > 1 && ` / ${sortedSeries.length} シリーズ`}
       </p>
 
       {books.length === 0 ? (
@@ -84,16 +88,16 @@ export default async function ShelfDetailPage({ params }: Props) {
         </div>
       ) : (
         <div className="space-y-8">
-          {sortedGenres.map((genre) => (
-            <section key={genre}>
+          {sortedSeries.map((series) => (
+            <section key={series}>
               <div className="mb-3 flex items-center gap-3">
-                <h2 className="text-lg font-semibold text-foreground">{genre}</h2>
+                <h2 className="text-lg font-semibold text-foreground">{series}</h2>
                 <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
-                  {genreGroups[genre].length}冊
+                  {seriesGroups[series].length}冊
                 </span>
               </div>
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-                {genreGroups[genre].map((book) => (
+                {seriesGroups[series].map((book) => (
                   <Link
                     key={book.id}
                     href={`/books/${book.id}`}
@@ -113,6 +117,11 @@ export default async function ShelfDetailPage({ params }: Props) {
                     <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">
                       {book.author}
                     </p>
+                    {book.series_order != null && (
+                      <p className="mt-1 text-xs font-medium text-primary">
+                        第{book.series_order}巻
+                      </p>
+                    )}
                   </Link>
                 ))}
               </div>
