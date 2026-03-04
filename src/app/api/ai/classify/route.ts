@@ -61,6 +61,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ message: "分類が必要な本はありません", processed: 0 });
   }
 
+  // 既存のシリーズ名一覧を取得（名前揺れ防止のためプロンプトに渡す）
+  const { data: existingSeries } = await supabase
+    .from("books")
+    .select("series_name")
+    .neq("series_name", "")
+    .order("series_name");
+  const seriesNames = [...new Set((existingSeries || []).map((d: { series_name: string }) => d.series_name))];
+  const seriesListText = seriesNames.length > 0
+    ? `\n\n既に登録済みのシリーズ名一覧:\n${seriesNames.join(", ")}\n※ 上記のシリーズに該当する本は、必ず完全に同じシリーズ名を使用してください。新しいシリーズ名をつける場合は表記揺れに注意してください。`
+    : "";
+
   // タイムアウト対策: 1回のリクエストで処理する冊数を制限
   const booksToProcess = books.slice(0, MAX_BOOKS_PER_REQUEST);
   const remaining = books.length - booksToProcess.length;
@@ -83,10 +94,11 @@ export async function POST(request: NextRequest) {
     const prompt = `あなたは日本の書籍分類の専門家です。以下の蔵書リストを分析して、各本にジャンルとシリーズ情報を付与してください。
 
 使用可能なジャンル一覧: ${GENRE_LIST}
-
+${seriesListText}
 ルール:
 1. ジャンルは上記の一覧から最も適切な1つだけを選んでください。どれにも当てはまらない場合は「その他」を使用してください。
 2. シリーズ名: 本がシリーズ物（漫画・小説シリーズ等）の一部である場合、シリーズ名を付与してください。シリーズでない場合は空文字にしてください。
+   - 既に登録済みのシリーズがある場合は、そのシリーズ名を正確に使ってください（表記揺れ厳禁）。
    - 例: 「進撃の巨人 1」→ シリーズ名: "進撃の巨人", 巻数: 1
    - 例: 「ハリー・ポッターと賢者の石」→ シリーズ名: "ハリー・ポッター", 巻数: 1
    - 例: 「火花」→ シリーズ名: "", 巻数: null（単巻の作品）
