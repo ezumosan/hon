@@ -12,9 +12,23 @@ export type Book = {
   jan_code: string | null;
   cover_image_url: string;
   genre: string;
+  ai_classified: boolean;
+  series_name: string;
+  series_order: number | null;
+  shelf_id: string | null;
   status: "unread" | "reading" | "read";
   memo: string;
   rating: number | null;
+  created_at: string;
+  updated_at: string;
+};
+
+/** shelves テーブルの行型定義 */
+export type Shelf = {
+  id: string;
+  name: string;
+  location: string;
+  barcode: string;
   created_at: string;
   updated_at: string;
 };
@@ -24,6 +38,9 @@ export type BookInsert = Omit<Book, "id" | "created_at" | "updated_at">;
 
 /** 更新時の入力型（全フィールド任意） */
 export type BookUpdate = Partial<BookInsert>;
+
+/** 本棚の挿入型 */
+export type ShelfInsert = Omit<Shelf, "id" | "created_at" | "updated_at">;
 
 /** ジャンル一覧 */
 export const GENRES = [

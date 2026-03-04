@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import type { Book, BookUpdate } from "@/types/book";
+import type { Book, BookUpdate, Shelf } from "@/types/book";
 import { GENRES } from "@/types/book";
 import { updateBook, deleteBook } from "@/lib/actions/books";
+import { getShelves } from "@/lib/actions/shelves";
 import BookCoverImage from "@/components/BookCoverImage";
 
 const STATUS_LABELS: Record<string, string> = {
@@ -26,6 +27,13 @@ export default function BookDetail({ book }: { book: Book }) {
   const [loading, setLoading] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [shelves, setShelves] = useState<Shelf[]>([]);
+
+  useEffect(() => {
+    getShelves().then((r) => setShelves(r.shelves));
+  }, []);
+
+  const shelfName = shelves.find((s) => s.id === book.shelf_id)?.name;
 
   const [form, setForm] = useState<BookUpdate>({
     title: book.title,
@@ -35,6 +43,9 @@ export default function BookDetail({ book }: { book: Book }) {
     description: book.description,
     page_count: book.page_count,
     genre: book.genre,
+    series_name: book.series_name,
+    series_order: book.series_order,
+    shelf_id: book.shelf_id,
     status: book.status,
     memo: book.memo,
     rating: book.rating,
@@ -117,6 +128,19 @@ export default function BookDetail({ book }: { book: Book }) {
                   {book.genre}
                 </span>
               )}
+              {book.series_name && (
+                <a
+                  href={`/series/${encodeURIComponent(book.series_name)}`}
+                  className="rounded-full bg-accent/10 px-2.5 py-0.5 text-xs font-medium text-accent hover:bg-accent/20 transition-colors"
+                >
+                  {book.series_name}{book.series_order ? ` #${book.series_order}` : ""}
+                </a>
+              )}
+              {book.ai_classified && (
+                <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-[10px] text-primary">
+                  AI分類済
+                </span>
+              )}
             </div>
             <h1 className="mb-1 text-2xl font-bold text-foreground">{book.title}</h1>
             <p className="mb-4 text-muted-foreground">{book.author}</p>
@@ -144,6 +168,14 @@ export default function BookDetail({ book }: { book: Book }) {
                 <>
                   <dt className="text-muted-foreground">ISBN-13</dt>
                   <dd className="font-mono text-xs text-foreground">{book.isbn_13}</dd>
+                </>
+              )}
+              {shelfName && (
+                <>
+                  <dt className="text-muted-foreground">本棚</dt>
+                  <dd className="text-foreground">
+                    <a href={`/shelves/${book.shelf_id}`} className="text-primary hover:underline">{shelfName}</a>
+                  </dd>
                 </>
               )}
             </dl>
@@ -242,6 +274,44 @@ export default function BookDetail({ book }: { book: Book }) {
                     <option value="read">読了</option>
                   </select>
                 </div>
+              </div>
+              {/* Series */}
+              <div className="grid grid-cols-3 gap-4">
+                <div className="col-span-2">
+                  <label className="mb-1 block text-sm font-medium text-muted-foreground">シリーズ名</label>
+                  <input
+                    type="text"
+                    value={form.series_name || ""}
+                    onChange={(e) => updateField("series_name", e.target.value)}
+                    placeholder="例: 進撃の巨人"
+                    className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-muted-foreground">巻数</label>
+                  <input
+                    type="number"
+                    value={form.series_order ?? ""}
+                    onChange={(e) => updateField("series_order", e.target.value ? parseInt(e.target.value) : null)}
+                    placeholder="1"
+                    min="1"
+                    className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
+              </div>
+              {/* Shelf */}
+              <div>
+                <label className="mb-1 block text-sm font-medium text-muted-foreground">本棚</label>
+                <select
+                  value={form.shelf_id || ""}
+                  onChange={(e) => updateField("shelf_id", e.target.value || null)}
+                  className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none"
+                >
+                  <option value="">未配置</option>
+                  {shelves.map((s) => (
+                    <option key={s.id} value={s.id}>{s.name}{s.location ? ` (${s.location})` : ""}</option>
+                  ))}
+                </select>
               </div>
               {/* Description */}
               <div>

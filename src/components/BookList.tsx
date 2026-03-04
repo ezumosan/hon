@@ -171,11 +171,18 @@ export default function BookList({ books }: Props) {
                   <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">
                     {book.author}
                   </p>
-                  {book.genre && (
-                    <span className="mt-1.5 inline-block rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
-                      {book.genre}
-                    </span>
-                  )}
+                  <div className="mt-1.5 flex flex-wrap gap-1">
+                    {book.genre && (
+                      <span className="inline-block rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
+                        {book.genre}
+                      </span>
+                    )}
+                    {book.series_name && (
+                      <span className="inline-block rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-medium text-accent">
+                        {book.series_name}{book.series_order ? ` #${book.series_order}` : ""}
+                      </span>
+                    )}
+                  </div>
                 </Link>
               </motion.div>
             ))}

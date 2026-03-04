@@ -29,10 +29,16 @@ export default function RootLayout({
                 <a href="/books" className="rounded-lg px-3 py-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
                   蔵書一覧
                 </a>
+                <a href="/series" className="rounded-lg px-3 py-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
+                  シリーズ
+                </a>
+                <a href="/shelves" className="rounded-lg px-3 py-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
+                  本棚
+                </a>
                 <a href="/books/scan" className="rounded-lg px-3 py-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
                   スキャン
                 </a>
-                <a href="/books/new" className="rounded-lg px-3 py-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
+                <a href="/books/new" className="hidden rounded-lg px-3 py-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:block">
                   手動登録
                 </a>
               </nav>

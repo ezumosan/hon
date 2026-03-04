@@ -1,12 +1,15 @@
-import { getBooks } from "@/lib/actions/books";
+import { getBooks, getSeriesList } from "@/lib/actions/books";
 import Link from "next/link";
 import BookCoverImage from "@/components/BookCoverImage";
+import AiSyncButton from "@/components/AiSyncButton";
 
 export default async function HomePage() {
   const { books } = await getBooks();
+  const { series } = await getSeriesList();
   const totalBooks = books.length;
   const readCount = books.filter((b) => b.status === "read").length;
   const readingCount = books.filter((b) => b.status === "reading").length;
+  const unclassifiedCount = books.filter((b) => !b.ai_classified).length;
 
   return (
     <div className="animate-fade-in">
@@ -50,6 +53,52 @@ export default async function HomePage() {
           <div className="card-hover rounded-2xl border border-border bg-card p-5 text-center">
             <p className="text-3xl font-bold text-primary">{readCount}</p>
             <p className="mt-1 text-sm text-muted-foreground">読了</p>
+          </div>
+        </section>
+      )}
+
+      {/* AI 分類 */}
+      {totalBooks > 0 && (
+        <section className="mb-12">
+          <div className="rounded-2xl border border-border bg-card p-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-bold text-foreground">AI 仕分け</h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {unclassifiedCount > 0
+                    ? `${unclassifiedCount}冊が未分類です`
+                    : "すべての本が分類済みです"}
+                </p>
+              </div>
+              <AiSyncButton unclassifiedCount={unclassifiedCount} />
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* シリーズ */}
+      {series.length > 0 && (
+        <section className="mb-12">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-xl font-bold text-foreground">シリーズ</h2>
+            <Link href="/series" className="text-sm text-primary hover:underline">
+              すべて見る →
+            </Link>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {series.slice(0, 10).map((s) => {
+              const count = books.filter((b) => b.series_name === s).length;
+              return (
+                <Link
+                  key={s}
+                  href={`/series/${encodeURIComponent(s)}`}
+                  className="card-hover rounded-xl border border-border bg-card px-4 py-2 text-sm text-foreground transition-colors hover:border-primary"
+                >
+                  {s}
+                  <span className="ml-2 text-xs text-muted-foreground">({count}冊)</span>
+                </Link>
+              );
+            })}
           </div>
         </section>
       )}
