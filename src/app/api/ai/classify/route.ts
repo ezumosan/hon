@@ -109,11 +109,15 @@ ${bookList}
         jsonText = jsonMatch[0];
       }
 
-      const parsed: { index: number; genre: string; series_name: string; series_order: number | null }[] =
-        JSON.parse(jsonText);
+      let parsed: { index: number; genre: string; series_name: string; series_order: number | null }[];
+      const raw = JSON.parse(jsonText);
+      // 単一オブジェクトが返された場合の対応
+      parsed = Array.isArray(raw) ? raw : [raw];
 
       for (const item of parsed) {
-        const book = batch[item.index - 1];
+        // index が 0 始まりで返される場合の補正
+        const idx = parsed.length === 1 ? 0 : (item.index ?? 1) - 1;
+        const book = batch[idx];
         if (!book) continue;
 
         // ジャンルの検証
