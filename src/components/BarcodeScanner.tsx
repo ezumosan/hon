@@ -8,6 +8,8 @@ type Props = {
   onScanSuccess: (code: string) => void;
   /** スキャン中かどうかの外部制御（省略時: true） */
   active?: boolean;
+  /** true の場合 isBookBarcode フィルターを無効化し全コードを受け入れる */
+  acceptAll?: boolean;
 };
 
 const SCANNER_REGION_ID = "barcode-scanner-region";
@@ -30,7 +32,7 @@ function isBookBarcode(code: string): boolean {
   return false;
 }
 
-export default function BarcodeScanner({ onScanSuccess, active = true }: Props) {
+export default function BarcodeScanner({ onScanSuccess, active = true, acceptAll = false }: Props) {
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isScanning, setIsScanning] = useState(false);
@@ -79,7 +81,7 @@ export default function BarcodeScanner({ onScanSuccess, active = true }: Props) 
           // 同じコードの連続検知を防止
           if (decodedText === lastScannedRef.current) return;
 
-          if (isBookBarcode(decodedText)) {
+          if (acceptAll || isBookBarcode(decodedText)) {
             lastScannedRef.current = decodedText;
             onScanSuccess(decodedText);
           }
@@ -97,7 +99,7 @@ export default function BarcodeScanner({ onScanSuccess, active = true }: Props) 
       setError(message);
       setIsScanning(false);
     }
-  }, [onScanSuccess, stopScanner]);
+  }, [acceptAll, onScanSuccess, stopScanner]);
 
   useEffect(() => {
     if (active) {
@@ -124,7 +126,7 @@ export default function BarcodeScanner({ onScanSuccess, active = true }: Props) 
       {isScanning && (
         <p className="flex items-center gap-2 text-sm text-primary">
           <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-primary" />
-          スキャン中... 本のバーコードをカメラに映してください
+          スキャン中... バーコードをカメラに映してください
         </p>
       )}
 

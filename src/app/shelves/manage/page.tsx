@@ -194,6 +194,7 @@ export default function ShelfManagePage() {
       <BarcodeScanner
         onScanSuccess={handleScan}
         active={!processing}
+        acceptAll
       />
 
       {/* 処理中 */}
