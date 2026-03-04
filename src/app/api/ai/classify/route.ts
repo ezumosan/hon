@@ -129,7 +129,7 @@ ${bookList}
           id: book.id,
           genre: validGenre,
           series_name: item.series_name || "",
-          series_order: item.series_order ?? null,
+          series_order: item.series_order != null ? Math.round(item.series_order) : null,
         });
       }
     } catch (e) {
