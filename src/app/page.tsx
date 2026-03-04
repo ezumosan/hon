@@ -15,24 +15,24 @@ export default async function HomePage() {
   return (
     <div className="animate-fade-in">
       {/* Hero */}
-      <section className="py-12 text-center sm:py-20">
-        <h1 className="mb-3 text-4xl font-extrabold tracking-tight text-foreground sm:text-5xl">
+      <section className="py-8 text-center sm:py-20">
+        <h1 className="mb-3 text-3xl font-extrabold tracking-tight text-foreground sm:text-5xl">
           蔵書管理システム
         </h1>
-        <p className="mx-auto mb-10 max-w-md text-muted-foreground">
+        <p className="mx-auto mb-8 max-w-md text-sm text-muted-foreground sm:mb-10 sm:text-base">
           バーコードスキャンまたは手動入力で、家にある本を簡単に管理できます。
         </p>
-        <div className="flex flex-wrap justify-center gap-4">
+        <div className="flex flex-wrap justify-center gap-3 sm:gap-4">
           <Link
             href="/books/scan"
-            className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3 font-medium text-primary-foreground shadow-lg shadow-primary/25 transition-all hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-0.5"
+            className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground shadow-lg shadow-primary/25 transition-all hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-0.5 sm:px-6 sm:py-3 sm:text-base"
           >
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2" /><line x1="7" y1="12" x2="17" y2="12" /><line x1="7" y1="8" x2="17" y2="8" /><line x1="7" y1="16" x2="17" y2="16" /></svg>
             バーコードスキャン
           </Link>
           <Link
             href="/books/new"
-            className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-6 py-3 font-medium text-foreground shadow-sm transition-all hover:bg-muted hover:-translate-y-0.5"
+            className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-medium text-foreground shadow-sm transition-all hover:bg-muted hover:-translate-y-0.5 sm:px-6 sm:py-3 sm:text-base"
           >
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5"><path d="M12 20h9" /><path d="M16.376 3.622a1 1 0 0 1 3.002 3.002L7.368 18.635a2 2 0 0 1-.855.506l-2.872.838a.5.5 0 0 1-.62-.62l.838-2.872a2 2 0 0 1 .506-.854z" /></svg>
             手動で登録
@@ -42,30 +42,30 @@ export default async function HomePage() {
 
       {/* Stats */}
       {totalBooks > 0 && (
-        <section className="mb-12 grid grid-cols-3 gap-4 sm:gap-6">
-          <div className="card-hover rounded-2xl border border-border bg-card p-5 text-center">
-            <p className="text-3xl font-bold text-foreground">{totalBooks}</p>
-            <p className="mt-1 text-sm text-muted-foreground">タイトル数</p>
+        <section className="mb-8 grid grid-cols-3 gap-3 sm:mb-12 sm:gap-6">
+          <div className="card-hover rounded-2xl border border-border bg-card p-3 text-center sm:p-5">
+            <p className="text-2xl font-bold text-foreground sm:text-3xl">{totalBooks}</p>
+            <p className="mt-1 text-xs text-muted-foreground sm:text-sm">タイトル数</p>
             {totalQuantity > totalBooks && (
               <p className="mt-0.5 text-xs text-muted-foreground">(計{totalQuantity}冊)</p>
             )}
           </div>
-          <div className="card-hover rounded-2xl border border-border bg-card p-5 text-center">
-            <p className="text-3xl font-bold text-accent">{readingCount}</p>
-            <p className="mt-1 text-sm text-muted-foreground">読書中</p>
+          <div className="card-hover rounded-2xl border border-border bg-card p-3 text-center sm:p-5">
+            <p className="text-2xl font-bold text-accent sm:text-3xl">{readingCount}</p>
+            <p className="mt-1 text-xs text-muted-foreground sm:text-sm">読書中</p>
           </div>
-          <div className="card-hover rounded-2xl border border-border bg-card p-5 text-center">
-            <p className="text-3xl font-bold text-primary">{readCount}</p>
-            <p className="mt-1 text-sm text-muted-foreground">読了</p>
+          <div className="card-hover rounded-2xl border border-border bg-card p-3 text-center sm:p-5">
+            <p className="text-2xl font-bold text-primary sm:text-3xl">{readCount}</p>
+            <p className="mt-1 text-xs text-muted-foreground sm:text-sm">読了</p>
           </div>
         </section>
       )}
 
       {/* AI 分類 */}
       {totalBooks > 0 && (
-        <section className="mb-12">
-          <div className="rounded-2xl border border-border bg-card p-5">
-            <div className="flex items-center justify-between">
+        <section className="mb-8 sm:mb-12">
+          <div className="rounded-2xl border border-border bg-card p-4 sm:p-5">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h2 className="text-lg font-bold text-foreground">AI 仕分け</h2>
                 <p className="mt-1 text-sm text-muted-foreground">

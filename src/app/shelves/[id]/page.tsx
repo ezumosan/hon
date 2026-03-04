@@ -45,9 +45,9 @@ export default async function ShelfDetailPage({ params }: Props) {
         本棚一覧に戻る
       </Link>
 
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">{shelf.name}</h1>
+          <h1 className="text-xl font-bold text-foreground sm:text-2xl">{shelf.name}</h1>
           {shelf.location && (
             <p className="mt-1 text-muted-foreground">{shelf.location}</p>
           )}
@@ -55,10 +55,10 @@ export default async function ShelfDetailPage({ params }: Props) {
             バーコード: {shelf.barcode}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <a
             href={`/api/shelves/barcode-pdf?id=${shelf.id}`}
-            className="inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+            className="inline-flex items-center gap-2 rounded-xl border border-border px-3 py-2 text-xs font-medium text-foreground transition-colors hover:bg-muted sm:px-4 sm:text-sm"
             target="_blank"
           >
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
@@ -66,14 +66,14 @@ export default async function ShelfDetailPage({ params }: Props) {
           </a>
           <Link
             href="/shelves/manage"
-            className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            className="inline-flex items-center gap-2 rounded-xl bg-primary px-3 py-2 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90 sm:px-4 sm:text-sm"
           >
             入庫/出庫
           </Link>
         </div>
       </div>
 
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-muted-foreground">
           {books.length} 冊{sortedSeries.length > 1 && ` / ${sortedSeries.length} シリーズ`}
         </p>
