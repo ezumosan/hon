@@ -77,9 +77,8 @@ function generateBarcodeSVG(text: string, width: number = 300, height: number = 
     }
   }
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height + 20}" width="${width}" height="${height + 20}">
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
     ${bars}
-    <text x="${width / 2}" y="${height + 16}" text-anchor="middle" font-family="monospace" font-size="12">${text}</text>
   </svg>`;
 }
 
@@ -107,16 +106,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "id または all パラメータが必要です" }, { status: 400 });
   }
 
-  // 印刷用HTMLとしてバーコードを出力
+  // 印刷用HTMLとしてバーコードを出力（1ページに全バーコードを収める）
   const barcodeCards = shelves
     .map((shelf) => {
       const svg = generateBarcodeSVG(shelf.barcode, 300, 80);
       return `
         <div class="card">
-          <h2>${shelf.name}</h2>
-          ${shelf.location ? `<p class="location">${shelf.location}</p>` : ""}
           <div class="barcode">${svg}</div>
-          <p class="code">${shelf.barcode}</p>
         </div>
       `;
     })
@@ -131,35 +127,34 @@ export async function GET(request: NextRequest) {
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      padding: 20mm;
+      padding: 10mm;
       background: white;
     }
     .cards {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 15mm;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6mm;
+      justify-content: center;
     }
     .card {
-      border: 2px solid #333;
-      border-radius: 8px;
-      padding: 10mm;
+      border: 1px dashed #ccc;
+      border-radius: 4px;
+      padding: 4mm;
       text-align: center;
-      page-break-inside: avoid;
+      width: 55mm;
     }
-    h2 { font-size: 18px; margin-bottom: 4px; }
-    .location { font-size: 13px; color: #666; margin-bottom: 8px; }
-    .barcode { margin: 8mm auto; max-width: 80mm; }
+    .barcode { max-width: 50mm; margin: 0 auto; }
     .barcode svg { width: 100%; height: auto; }
-    .code { font-family: monospace; font-size: 14px; color: #333; margin-top: 4px; }
     .print-btn {
       position: fixed; top: 10px; right: 10px;
       padding: 8px 20px; background: #2563eb; color: white;
       border: none; border-radius: 8px; cursor: pointer;
-      font-size: 14px;
+      font-size: 14px; z-index: 10;
     }
     @media print {
       .print-btn { display: none; }
-      body { padding: 10mm; }
+      body { padding: 5mm; }
+      .card { border-color: #eee; }
     }
   </style>
 </head>
