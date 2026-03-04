@@ -15,7 +15,7 @@ type RegisteredBook = {
 type ScanState =
   | { status: "scanning" }
   | { status: "processing"; code: string }
-  | { status: "registered"; book: RegisteredBook; code: string; partial?: boolean }
+  | { status: "registered"; book: RegisteredBook; code: string; partial?: boolean; quantityUpdated?: boolean; newQuantity?: number }
   | { status: "error"; message: string; code: string };
 
 export default function ScanPage() {
@@ -85,6 +85,8 @@ export default function ScanPage() {
         book: registered,
         code,
         partial: isPartial,
+        quantityUpdated: result.quantityUpdated,
+        newQuantity: result.book!.quantity,
       } as ScanState);
       setHistory((prev) => [registered, ...prev]);
     } catch {
@@ -139,8 +141,15 @@ export default function ScanPage() {
         <div className="mt-6 rounded-2xl border border-primary/30 bg-primary/5 p-4 shadow-sm">
           <p className="mb-2 flex items-center gap-2 text-sm font-medium text-primary">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4"><path d="M20 6 9 17l-5-5" /></svg>
-            登録しました
+            {state.quantityUpdated
+              ? `品数を ${state.newQuantity} 冊に更新しました`
+              : "登録しました"}
           </p>
+          {state.quantityUpdated && (
+            <p className="mb-2 rounded-lg bg-blue-500/10 px-3 py-2 text-xs text-blue-600 dark:text-blue-400">
+              同じ ISBN の本が既に登録されていたため、品数を増やしました。
+            </p>
+          )}
           {state.partial && (
             <p className="mb-2 rounded-lg bg-accent/10 px-3 py-2 text-xs text-accent">
               書籍データベースに情報がなかったため、ISBNのみで仮登録しました。詳細ページからタイトルや著者を編集できます。
@@ -230,9 +239,9 @@ export default function ScanPage() {
             今回登録した本（{history.length}冊）
           </h2>
           <ul className="space-y-2">
-            {history.map((book) => (
+            {history.map((book, idx) => (
               <li
-                key={book.id}
+                key={`${book.id}-${idx}`}
                 className="flex items-center gap-3 rounded-xl border border-border bg-card p-3"
               >
                 {book.cover_image_url && (

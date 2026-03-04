@@ -41,12 +41,8 @@ create table public.books (
   updated_at  timestamptz not null default now()        -- 更新日時
 );
 
--- ISBN / JAN で重複登録を防止するユニークインデックス
-create unique index if not exists books_isbn13_unique on public.books (isbn_13)
-  where isbn_13 is not null and isbn_13 <> '';
-
-create unique index if not exists books_jan_unique on public.books (jan_code)
-  where jan_code is not null and jan_code <> '';
+-- 同じ ISBN / JAN の本を複数所有できるようにユニークインデックスは作成しない
+-- (quantity フィールドで品数を管理する)
 
 -- タイトル・著者でのあいまい検索用トライグラムインデックス（任意）
 -- create extension if not exists pg_trgm;
