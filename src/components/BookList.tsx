@@ -182,6 +182,11 @@ export default function BookList({ books }: Props) {
                         {book.series_name}{book.series_order ? ` #${book.series_order}` : ""}
                       </span>
                     )}
+                    {book.quantity > 1 && (
+                      <span className="inline-block rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+                        x{book.quantity}
+                      </span>
+                    )}
                   </div>
                 </Link>
               </motion.div>

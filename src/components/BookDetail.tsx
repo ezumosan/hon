@@ -46,6 +46,7 @@ export default function BookDetail({ book }: { book: Book }) {
     series_name: book.series_name,
     series_order: book.series_order,
     shelf_id: book.shelf_id,
+    quantity: book.quantity,
     status: book.status,
     memo: book.memo,
     rating: book.rating,
@@ -176,6 +177,12 @@ export default function BookDetail({ book }: { book: Book }) {
                   <dd className="text-foreground">
                     <a href={`/shelves/${book.shelf_id}`} className="text-primary hover:underline">{shelfName}</a>
                   </dd>
+                </>
+              )}
+              {book.quantity > 1 && (
+                <>
+                  <dt className="text-muted-foreground">所有数</dt>
+                  <dd className="text-foreground">{book.quantity}冊</dd>
                 </>
               )}
             </dl>
@@ -312,6 +319,17 @@ export default function BookDetail({ book }: { book: Book }) {
                     <option key={s.id} value={s.id}>{s.name}{s.location ? ` (${s.location})` : ""}</option>
                   ))}
                 </select>
+              </div>
+              {/* Quantity */}
+              <div>
+                <label className="mb-1 block text-sm font-medium text-muted-foreground">所有数</label>
+                <input
+                  type="number"
+                  value={form.quantity ?? 1}
+                  onChange={(e) => updateField("quantity", Math.max(1, parseInt(e.target.value) || 1))}
+                  min="1"
+                  className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                />
               </div>
               {/* Description */}
               <div>

@@ -60,6 +60,7 @@ export default function ScanPage() {
         series_name: "",
         series_order: null,
         shelf_id: null,
+        quantity: 1,
         status: "unread",
         memo: "",
         rating: null,

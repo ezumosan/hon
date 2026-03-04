@@ -22,6 +22,7 @@ const defaultForm: BookInsert = {
   series_name: "",
   series_order: null,
   shelf_id: null,
+  quantity: 1,
   status: "unread",
   memo: "",
   rating: null,
@@ -320,8 +321,8 @@ export default function NewBookForm() {
           />
         </div>
 
-        {/* ページ数 & ステータス */}
-        <div className="grid grid-cols-2 gap-4">
+        {/* ページ数 & ステータス & 所有数 */}
+        <div className="grid grid-cols-3 gap-4">
           <div>
             <label className="mb-1 block text-sm font-medium text-muted-foreground">
               ページ数
@@ -356,6 +357,23 @@ export default function NewBookForm() {
               <option value="reading">読書中</option>
               <option value="read">読了</option>
             </select>
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-muted-foreground">
+              所有数
+            </label>
+            <input
+              type="number"
+              value={form.quantity ?? 1}
+              onChange={(e) =>
+                updateField(
+                  "quantity",
+                  Math.max(1, parseInt(e.target.value) || 1)
+                )
+              }
+              min="1"
+              className="w-full rounded-xl border border-border bg-background px-3 py-2 text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+            />
           </div>
         </div>
 

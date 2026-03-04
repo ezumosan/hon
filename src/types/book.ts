@@ -16,6 +16,7 @@ export type Book = {
   series_name: string;
   series_order: number | null;
   shelf_id: string | null;
+  quantity: number;
   status: "unread" | "reading" | "read";
   memo: string;
   rating: number | null;

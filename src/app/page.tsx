@@ -7,6 +7,7 @@ export default async function HomePage() {
   const { books } = await getBooks();
   const { series } = await getSeriesList();
   const totalBooks = books.length;
+  const totalQuantity = books.reduce((sum, b) => sum + (b.quantity || 1), 0);
   const readCount = books.filter((b) => b.status === "read").length;
   const readingCount = books.filter((b) => b.status === "reading").length;
   const unclassifiedCount = books.filter((b) => !b.ai_classified).length;
@@ -44,7 +45,10 @@ export default async function HomePage() {
         <section className="mb-12 grid grid-cols-3 gap-4 sm:gap-6">
           <div className="card-hover rounded-2xl border border-border bg-card p-5 text-center">
             <p className="text-3xl font-bold text-foreground">{totalBooks}</p>
-            <p className="mt-1 text-sm text-muted-foreground">登録済み</p>
+            <p className="mt-1 text-sm text-muted-foreground">タイトル数</p>
+            {totalQuantity > totalBooks && (
+              <p className="mt-0.5 text-xs text-muted-foreground">(計{totalQuantity}冊)</p>
+            )}
           </div>
           <div className="card-hover rounded-2xl border border-border bg-card p-5 text-center">
             <p className="text-3xl font-bold text-accent">{readingCount}</p>
