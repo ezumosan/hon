@@ -9,9 +9,15 @@ import { GENRES } from "@/types/book";
 // Gemini 2.5 Flash を使って未分類の本にジャンルとシリーズ名を付与する
 // ============================================================
 
+// Vercel タイムアウト拡張（Hobby: 最大60秒）
+export const maxDuration = 60;
+
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
 const GENRE_LIST = GENRES.join(", ");
+
+// 1回のリクエストで処理する最大冊数（タイムアウト対策）
+const MAX_BOOKS_PER_REQUEST = 40;
 
 type ClassifyResult = {
   id: string;
@@ -51,13 +57,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ message: "分類が必要な本はありません", processed: 0 });
   }
 
+  // タイムアウト対策: 1回のリクエストで処理する冊数を制限
+  const booksToProcess = books.slice(0, MAX_BOOKS_PER_REQUEST);
+  const remaining = books.length - booksToProcess.length;
+
   // バッチ処理（最大20冊ずつ）
   const BATCH_SIZE = 20;
   const results: ClassifyResult[] = [];
   const errors: string[] = [];
 
-  for (let i = 0; i < books.length; i += BATCH_SIZE) {
-    const batch = books.slice(i, i + BATCH_SIZE);
+  for (let i = 0; i < booksToProcess.length; i += BATCH_SIZE) {
+    const batch = booksToProcess.slice(i, i + BATCH_SIZE);
 
     const bookList = batch
       .map(
@@ -147,6 +157,7 @@ ${bookList}
     message: updated > 0 ? `${updated}冊を分類しました` : errors.length > 0 ? `AI分類に失敗しました: ${errors[0]}` : "分類対象がありません",
     processed: updated,
     total: books.length,
+    remaining,
     ...(errors.length > 0 && { errors }),
   });
 }

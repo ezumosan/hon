@@ -11,30 +11,51 @@ export default function AiSyncButton({ unclassifiedCount }: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<string | null>(null);
+  const [progress, setProgress] = useState<string | null>(null);
 
   async function handleSync() {
     if (loading) return;
     setLoading(true);
     setResult(null);
+    setProgress(null);
+
+    let totalProcessed = 0;
+    let hasMore = true;
 
     try {
-      const res = await fetch("/api/ai/classify", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
-      });
-      const data = await res.json();
+      while (hasMore) {
+        const res = await fetch("/api/ai/classify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({}),
+        });
+        const data = await res.json();
 
-      if (data.error) {
-        setResult(`エラー: ${data.error}`);
-      } else {
-        setResult(data.message || `${data.processed}冊を分類しました`);
-        router.refresh();
+        if (data.error) {
+          setResult(`エラー: ${data.error}`);
+          break;
+        }
+
+        totalProcessed += data.processed || 0;
+        const remaining = data.remaining ?? 0;
+
+        if (remaining > 0 && data.processed > 0) {
+          setProgress(`${totalProcessed}冊を分類済み... 残り${remaining}冊`);
+        } else {
+          hasMore = false;
+          if (totalProcessed > 0) {
+            setResult(`${totalProcessed}冊を分類しました`);
+          } else {
+            setResult(data.message || "分類対象がありません");
+          }
+        }
       }
+      router.refresh();
     } catch {
       setResult("通信エラーが発生しました");
     }
 
+    setProgress(null);
     setLoading(false);
   }
 
@@ -60,6 +81,9 @@ export default function AiSyncButton({ unclassifiedCount }: Props) {
           </>
         )}
       </button>
+      {progress && (
+        <p className="text-xs text-muted-foreground">{progress}</p>
+      )}
       {result && (
         <p className="text-xs text-muted-foreground">{result}</p>
       )}
