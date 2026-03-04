@@ -15,7 +15,7 @@ type RegisteredBook = {
 type ScanState =
   | { status: "scanning" }
   | { status: "processing"; code: string }
-  | { status: "registered"; book: RegisteredBook; code: string }
+  | { status: "registered"; book: RegisteredBook; code: string; partial?: boolean }
   | { status: "error"; message: string; code: string };
 
 export default function ScanPage() {
@@ -42,6 +42,7 @@ export default function ScanPage() {
       }
 
       const data = await res.json();
+      const isPartial = data._partial === true;
 
       const bookData: BookInsert = {
         title: data.title || "",
@@ -74,7 +75,12 @@ export default function ScanPage() {
         cover_image_url: result.book!.cover_image_url,
       };
 
-      setState({ status: "registered", book: registered, code });
+      setState({
+        status: "registered",
+        book: registered,
+        code,
+        partial: isPartial,
+      } as ScanState);
       setHistory((prev) => [registered, ...prev]);
     } catch {
       setState({ status: "error", message: "通信エラーが発生しました", code });
@@ -130,6 +136,11 @@ export default function ScanPage() {
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4"><path d="M20 6 9 17l-5-5" /></svg>
             登録しました
           </p>
+          {state.partial && (
+            <p className="mb-2 rounded-lg bg-accent/10 px-3 py-2 text-xs text-accent">
+              書籍データベースに情報がなかったため、ISBNのみで仮登録しました。詳細ページからタイトルや著者を編集できます。
+            </p>
+          )}
           <div className="flex items-center gap-4">
             {state.book.cover_image_url && (
               <img src={state.book.cover_image_url} alt="書影" className="h-20 rounded-lg shadow" />

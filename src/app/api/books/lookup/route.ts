@@ -20,6 +20,7 @@ type BookInfo = {
   isbn_13: string | null;
   isbn_10: string | null;
   cover_image_url: string;
+  _partial?: boolean;
 };
 
 // ---- openBD ----
@@ -234,10 +235,20 @@ export async function GET(request: NextRequest) {
   }
 
   if (!bookInfo) {
-    return NextResponse.json(
-      { error: "書籍情報が見つかりませんでした", code: cleaned },
-      { status: 404 }
-    );
+    // 全APIでヒットしない場合でも、ISBNだけで仮データを返す
+    // (教科書・同人誌など一般DBに未登録の書籍向け)
+    bookInfo = {
+      title: `ISBN: ${cleaned}`,
+      author: "",
+      publisher: "",
+      published_date: "",
+      description: "",
+      page_count: null,
+      isbn_13: cleaned.length === 13 ? cleaned : null,
+      isbn_10: cleaned.length === 10 ? cleaned : null,
+      cover_image_url: "",
+      _partial: true, // フロント側で「情報未取得」と判定するフラグ
+    };
   }
 
   return NextResponse.json(bookInfo);
