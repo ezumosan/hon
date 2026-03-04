@@ -143,6 +143,7 @@ ${bookList}
 
   // DB 更新
   let updated = 0;
+  const updateErrors: string[] = [];
   for (const r of results) {
     const { error: updateError } = await supabase
       .from("books")
@@ -154,7 +155,11 @@ ${bookList}
       })
       .eq("id", r.id);
 
-    if (!updateError) updated++;
+    if (!updateError) {
+      updated++;
+    } else {
+      updateErrors.push(`${r.id}: ${updateError.message}`);
+    }
   }
 
   return NextResponse.json({
@@ -162,6 +167,8 @@ ${bookList}
     processed: updated,
     total: books.length,
     remaining,
+    resultsCount: results.length,
     ...(errors.length > 0 && { errors }),
+    ...(updateErrors.length > 0 && { updateErrors }),
   });
 }
