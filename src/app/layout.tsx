@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import MobileNav from "@/components/MobileNav";
+import ThemeToggleButton from "@/components/ThemeToggleButton";
 
 export const metadata: Metadata = {
   title: "Hon - 蔵書管理",
@@ -53,6 +54,7 @@ export default function RootLayout({
                 <a href="/books/scan" className="rounded-lg px-3 py-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
                   スキャン
                 </a>
+                <ThemeToggleButton />
               </nav>
 
               {/* モバイルハンバーガーメニュー */}
