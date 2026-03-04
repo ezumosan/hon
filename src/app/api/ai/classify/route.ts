@@ -34,6 +34,7 @@ export async function POST(request: NextRequest) {
   // 手動呼び出しは常に許可、Cron は CRON_SECRET で認証
   const body = await request.json().catch(() => ({}));
   const forceAll = body.forceAll === true;
+  const bookIds: string[] | undefined = body.bookIds;
 
   const supabase = await createClient();
 
@@ -43,7 +44,10 @@ export async function POST(request: NextRequest) {
     .select("id, title, author, publisher, description")
     .order("created_at", { ascending: false });
 
-  if (!forceAll) {
+  if (bookIds && bookIds.length > 0) {
+    // 特定の本のみ対象（本棚の再分類用）
+    query = query.in("id", bookIds);
+  } else if (!forceAll) {
     query = query.eq("ai_classified", false);
   }
 

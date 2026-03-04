@@ -2,6 +2,7 @@ import { getShelf } from "@/lib/actions/shelves";
 import { getBooks } from "@/lib/actions/books";
 import Link from "next/link";
 import BookCoverImage from "@/components/BookCoverImage";
+import ShelfAiClassifyButton from "@/components/ShelfAiClassifyButton";
 import { notFound } from "next/navigation";
 
 type Props = {
@@ -72,9 +73,14 @@ export default async function ShelfDetailPage({ params }: Props) {
         </div>
       </div>
 
-      <p className="mb-4 text-sm text-muted-foreground">
-        {books.length} 冊{sortedSeries.length > 1 && ` / ${sortedSeries.length} シリーズ`}
-      </p>
+      <div className="mb-4 flex items-center justify-between">
+        <p className="text-sm text-muted-foreground">
+          {books.length} 冊{sortedSeries.length > 1 && ` / ${sortedSeries.length} シリーズ`}
+        </p>
+        {books.length > 0 && (
+          <ShelfAiClassifyButton bookIds={books.map((b) => b.id)} />
+        )}
+      </div>
 
       {books.length === 0 ? (
         <div className="rounded-2xl border border-border bg-card py-16 text-center">

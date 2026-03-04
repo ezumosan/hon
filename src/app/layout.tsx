@@ -35,11 +35,14 @@ export default function RootLayout({
                 <a href="/shelves" className="rounded-lg px-3 py-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
                   本棚
                 </a>
-                <a href="/books/scan" className="rounded-lg px-3 py-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
-                  スキャン
+                <a href="/books/find" className="rounded-lg px-3 py-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
+                  探す
                 </a>
-                <a href="/books/new" className="hidden rounded-lg px-3 py-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:block">
-                  手動登録
+                <a href="/wishlist" className="rounded-lg px-3 py-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
+                  ほしい本
+                </a>
+                <a href="/books/scan" className="hidden rounded-lg px-3 py-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:block">
+                  スキャン
                 </a>
               </nav>
             </div>
