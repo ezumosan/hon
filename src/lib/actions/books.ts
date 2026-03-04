@@ -12,6 +12,40 @@ import { revalidatePath } from "next/cache";
 export async function createBook(data: BookInsert): Promise<{ book?: Book; error?: string }> {
   const supabase = await createClient();
 
+  // ISBN重複チェック（同じISBNの本が既にある場合は品数を増やす）
+  if (data.isbn_13) {
+    const { data: existing } = await supabase
+      .from("books")
+      .select("id, title, quantity")
+      .eq("isbn_13", data.isbn_13)
+      .limit(1)
+      .single();
+
+    if (existing) {
+      // 既存のレコードの品数を1増やす
+      const { error: updateErr } = await supabase
+        .from("books")
+        .update({ quantity: (existing.quantity || 1) + 1 })
+        .eq("id", existing.id);
+
+      if (updateErr) return { error: updateErr.message };
+
+      // 更新後のレコードを返す
+      const { data: updated } = await supabase
+        .from("books")
+        .select("*")
+        .eq("id", existing.id)
+        .single();
+
+      revalidatePath("/");
+      revalidatePath("/books");
+      return {
+        book: updated as Book,
+        error: undefined,
+      };
+    }
+  }
+
   const { data: book, error } = await supabase
     .from("books")
     .insert(data)
@@ -19,10 +53,6 @@ export async function createBook(data: BookInsert): Promise<{ book?: Book; error
     .single();
 
   if (error) {
-    // 重複チェック
-    if (error.code === "23505") {
-      return { error: "この本は既に登録されています" };
-    }
     return { error: error.message };
   }
 

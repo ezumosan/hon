@@ -36,7 +36,31 @@ export default function BarcodeScanner({ onScanSuccess, active = true, acceptAll
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isScanning, setIsScanning] = useState(false);
+  const [torchOn, setTorchOn] = useState(false);
+  const [torchSupported, setTorchSupported] = useState(false);
   const lastScannedRef = useRef<string>("");
+
+  /** ライトのオン/オフを切り替える */
+  const toggleTorch = useCallback(async () => {
+    try {
+      const videoEl = document.querySelector(
+        `#${SCANNER_REGION_ID} video`
+      ) as HTMLVideoElement | null;
+      if (!videoEl?.srcObject) return;
+
+      const track = (videoEl.srcObject as MediaStream).getVideoTracks()[0];
+      if (!track) return;
+
+      const next = !torchOn;
+      await track.applyConstraints({
+        // @ts-expect-error -- torch is not in the standard typings yet
+        advanced: [{ torch: next }],
+      });
+      setTorchOn(next);
+    } catch {
+      // デバイスが対応していない場合は無視
+    }
+  }, [torchOn]);
 
   const stopScanner = useCallback(async () => {
     if (scannerRef.current) {
@@ -51,6 +75,8 @@ export default function BarcodeScanner({ onScanSuccess, active = true, acceptAll
       }
       scannerRef.current = null;
       setIsScanning(false);
+      setTorchOn(false);
+      setTorchSupported(false);
     }
   }, []);
 
@@ -93,6 +119,27 @@ export default function BarcodeScanner({ onScanSuccess, active = true, acceptAll
 
       setIsScanning(true);
       setError(null);
+
+      // ライト対応チェック（少し待ってからビデオトラックを取得）
+      setTimeout(() => {
+        try {
+          const videoEl = document.querySelector(
+            `#${SCANNER_REGION_ID} video`
+          ) as HTMLVideoElement | null;
+          if (!videoEl?.srcObject) return;
+
+          const track = (videoEl.srcObject as MediaStream).getVideoTracks()[0];
+          if (!track) return;
+
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const caps = track.getCapabilities() as any;
+          if (caps?.torch) {
+            setTorchSupported(true);
+          }
+        } catch {
+          // capability check failed
+        }
+      }, 500);
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "カメラの起動に失敗しました";
@@ -116,11 +163,40 @@ export default function BarcodeScanner({ onScanSuccess, active = true, acceptAll
   return (
     <div className="flex flex-col items-center gap-4">
       {/* カメラプレビュー領域 */}
-      <div
-        id={SCANNER_REGION_ID}
-        className="w-full max-w-md overflow-hidden rounded-xl border-2 border-dashed border-border"
-        style={{ minHeight: 300 }}
-      />
+      <div className="relative w-full max-w-md">
+        <div
+          id={SCANNER_REGION_ID}
+          className="w-full overflow-hidden rounded-xl border-2 border-dashed border-border"
+          style={{ minHeight: 300 }}
+        />
+
+        {/* フラッシュライトボタン */}
+        {isScanning && torchSupported && (
+          <button
+            onClick={toggleTorch}
+            className={`absolute top-3 right-3 z-10 flex h-10 w-10 items-center justify-center rounded-full shadow-lg transition-colors ${
+              torchOn
+                ? "bg-yellow-400 text-gray-900"
+                : "bg-gray-800/70 text-white hover:bg-gray-700/80"
+            }`}
+            title={torchOn ? "ライトOFF" : "ライトON"}
+            aria-label={torchOn ? "フラッシュライトをオフにする" : "フラッシュライトをオンにする"}
+          >
+            {torchOn ? (
+              /* ライトON アイコン */
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 14.5c-2.49 0-4.5-2.01-4.5-4.5S9.51 7.5 12 7.5s4.5 2.01 4.5 4.5-2.01 4.5-4.5 4.5zm0-5.5c-.55 0-1 .45-1 1s.45 1 1 1 1-.45 1-1-.45-1-1-1z" />
+              </svg>
+            ) : (
+              /* ライトOFF アイコン */
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+                <path d="M9 18h6M10 22h4M12 2v1M4.22 4.22l.71.71M1 12h2M19.78 4.22l-.71.71M23 12h-2" />
+                <path d="M15 9.34V7a3 3 0 0 0-6 0v2.34a5 5 0 1 0 6 0z" />
+              </svg>
+            )}
+          </button>
+        )}
+      </div>
 
       {/* ステータス表示 */}
       {isScanning && (
