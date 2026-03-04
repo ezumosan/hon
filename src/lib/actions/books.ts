@@ -62,9 +62,17 @@ export async function updateBook(
 ): Promise<{ book?: Book; error?: string }> {
   const supabase = await createClient();
 
+  // ステータスが「読了」に変更された場合、read_at を設定
+  const updateData: Record<string, unknown> = { ...data };
+  if (data.status === "read") {
+    updateData.read_at = new Date().toISOString();
+  } else if (data.status) {
+    updateData.read_at = null;
+  }
+
   const { data: book, error } = await supabase
     .from("books")
-    .update(data)
+    .update(updateData)
     .eq("id", id)
     .select()
     .single();

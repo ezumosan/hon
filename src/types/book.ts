@@ -20,6 +20,7 @@ export type Book = {
   status: "unread" | "reading" | "read";
   memo: string;
   rating: number | null;
+  read_at: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -35,7 +36,7 @@ export type Shelf = {
 };
 
 /** 新規登録時の入力型（id, created_at, updated_at は自動生成） */
-export type BookInsert = Omit<Book, "id" | "created_at" | "updated_at">;
+export type BookInsert = Omit<Book, "id" | "created_at" | "updated_at" | "read_at">;
 
 /** 更新時の入力型（全フィールド任意） */
 export type BookUpdate = Partial<BookInsert>;
