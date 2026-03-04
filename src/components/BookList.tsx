@@ -76,6 +76,55 @@ function StatusBadge({ book, onUpdated }: { book: Book; onUpdated: (id: string, 
   );
 }
 
+function StarRating({ bookId, rating, onUpdated }: { bookId: string; rating: number | null; onUpdated: (id: string, rating: number | null) => void }) {
+  const [loading, setLoading] = useState(false);
+  const [hover, setHover] = useState(0);
+
+  async function handleClick(e: React.MouseEvent, star: number) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (loading) return;
+    const newRating = rating === star ? null : star;
+    setLoading(true);
+    await updateBook(bookId, { rating: newRating });
+    onUpdated(bookId, newRating);
+    setLoading(false);
+  }
+
+  return (
+    <div
+      className="flex items-center gap-px"
+      onMouseLeave={() => setHover(0)}
+    >
+      {[1, 2, 3, 4, 5].map((star) => (
+        <button
+          key={star}
+          onClick={(e) => handleClick(e, star)}
+          onMouseEnter={(e) => { e.preventDefault(); setHover(star); }}
+          className={`p-0 transition-colors ${
+            loading ? "opacity-50" : ""
+          }`}
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill={(hover || rating || 0) >= star ? "currentColor" : "none"}
+            stroke="currentColor"
+            strokeWidth="1.5"
+            className={`h-3.5 w-3.5 ${
+              (hover || rating || 0) >= star
+                ? "text-amber-400"
+                : "text-muted-foreground/40"
+            }`}
+          >
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+          </svg>
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export default function BookList({ books: initialBooks }: Props) {
   const [books, setBooks] = useState(initialBooks);
   const [query, setQuery] = useState("");
@@ -87,6 +136,10 @@ export default function BookList({ books: initialBooks }: Props) {
 
   function handleStatusUpdated(id: string, status: string) {
     setBooks((prev) => prev.map((b) => b.id === id ? { ...b, status: status as Book["status"] } : b));
+  }
+
+  function handleRatingUpdated(id: string, rating: number | null) {
+    setBooks((prev) => prev.map((b) => b.id === id ? { ...b, rating } : b));
   }
 
   // ジャンル一覧を動的に取得（登録済みのジャンル + マスター一覧）
@@ -228,6 +281,9 @@ export default function BookList({ books: initialBooks }: Props) {
                   <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">
                     {book.author}
                   </p>
+                  <div className="mt-1.5">
+                    <StarRating bookId={book.id} rating={book.rating} onUpdated={handleRatingUpdated} />
+                  </div>
                   <div className="mt-1.5 flex flex-wrap gap-1">
                     {book.genre && (
                       <span className="inline-block rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
