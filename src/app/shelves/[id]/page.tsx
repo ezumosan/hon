@@ -16,6 +16,20 @@ export default async function ShelfDetailPage({ params }: Props) {
 
   const { books } = await getBooks({ shelfId: id });
 
+  // ジャンル別にグループ化
+  const genreGroups: Record<string, typeof books> = {};
+  for (const book of books) {
+    const genre = book.genre || "未分類";
+    if (!genreGroups[genre]) genreGroups[genre] = [];
+    genreGroups[genre].push(book);
+  }
+  // ソート: 未分類を末尾に
+  const sortedGenres = Object.keys(genreGroups).sort((a, b) => {
+    if (a === "未分類") return 1;
+    if (b === "未分類") return -1;
+    return a.localeCompare(b, "ja");
+  });
+
   return (
     <div className="animate-fade-in">
       <Link
@@ -54,7 +68,9 @@ export default async function ShelfDetailPage({ params }: Props) {
         </div>
       </div>
 
-      <p className="mb-4 text-sm text-muted-foreground">{books.length} 冊</p>
+      <p className="mb-4 text-sm text-muted-foreground">
+        {books.length} 冊{sortedGenres.length > 1 && ` / ${sortedGenres.length} ジャンル`}
+      </p>
 
       {books.length === 0 ? (
         <div className="rounded-2xl border border-border bg-card py-16 text-center">
@@ -67,28 +83,40 @@ export default async function ShelfDetailPage({ params }: Props) {
           </Link>
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-          {books.map((book) => (
-            <Link
-              key={book.id}
-              href={`/books/${book.id}`}
-              className="card-hover group rounded-2xl border border-border bg-card p-3"
-            >
-              <div className="relative mb-3 aspect-[2/3] overflow-hidden rounded-lg bg-muted">
-                <BookCoverImage
-                  src={book.cover_image_url}
-                  isbn={book.isbn_13}
-                  alt={book.title}
-                  className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                />
+        <div className="space-y-8">
+          {sortedGenres.map((genre) => (
+            <section key={genre}>
+              <div className="mb-3 flex items-center gap-3">
+                <h2 className="text-lg font-semibold text-foreground">{genre}</h2>
+                <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
+                  {genreGroups[genre].length}冊
+                </span>
               </div>
-              <p className="line-clamp-2 text-sm font-medium leading-tight text-foreground">
-                {book.title}
-              </p>
-              <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">
-                {book.author}
-              </p>
-            </Link>
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+                {genreGroups[genre].map((book) => (
+                  <Link
+                    key={book.id}
+                    href={`/books/${book.id}`}
+                    className="card-hover group rounded-2xl border border-border bg-card p-3"
+                  >
+                    <div className="relative mb-3 aspect-[2/3] overflow-hidden rounded-lg bg-muted">
+                      <BookCoverImage
+                        src={book.cover_image_url}
+                        isbn={book.isbn_13}
+                        alt={book.title}
+                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      />
+                    </div>
+                    <p className="line-clamp-2 text-sm font-medium leading-tight text-foreground">
+                      {book.title}
+                    </p>
+                    <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">
+                      {book.author}
+                    </p>
+                  </Link>
+                ))}
+              </div>
+            </section>
           ))}
         </div>
       )}
