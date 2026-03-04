@@ -142,6 +142,11 @@ export default function BookDetail({ book }: { book: Book }) {
                   AI分類済
                 </span>
               )}
+              {book.memo?.includes("[複数所有コピー]") && (
+                <span className="rounded-full bg-amber-500/15 px-2.5 py-0.5 text-[10px] font-medium text-amber-600 dark:text-amber-400">
+                  複数所有コピー
+                </span>
+              )}
             </div>
             <h1 className="mb-1 text-2xl font-bold text-foreground">{book.title}</h1>
             <p className="mb-4 text-muted-foreground">{book.author}</p>

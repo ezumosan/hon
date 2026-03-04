@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect } from "react";
 import BarcodeScanner from "@/components/BarcodeScanner";
-import { assignBookToShelf, removeBookFromShelf, getBookByIsbn } from "@/lib/actions/books";
+import { assignBookToShelf, removeBookFromShelf, getBookByIsbn, getBooksByIsbn } from "@/lib/actions/books";
 import { getShelfByBarcode, getShelves } from "@/lib/actions/shelves";
 import type { Shelf } from "@/types/book";
 
@@ -56,26 +56,62 @@ export default function ShelfManagePage() {
         } else if (step === "scan-book" && selectedShelf) {
           // 本のバーコードをスキャン → 入庫
           const cleaned = code.replace(/[^0-9]/g, "");
-          const result = await getBookByIsbn(cleaned);
-          if (result.book) {
-            const assignResult = await assignBookToShelf(result.book.id, selectedShelf.id);
-            if (assignResult.error) {
-              setMessage({ type: "error", text: assignResult.error });
-            } else {
-              setMessage({ type: "success", text: `「${result.book.title}」を「${selectedShelf.name}」に入庫しました` });
-              setLog((prev) => [
-                {
-                  id: `${Date.now()}`,
-                  bookTitle: result.book!.title,
-                  shelfName: selectedShelf.name,
-                  action: "checkin",
-                  time: new Date().toLocaleTimeString("ja-JP"),
-                },
-                ...prev,
-              ]);
+          const { books: copies } = await getBooksByIsbn(cleaned);
+          if (copies.length === 0) {
+            // ISBN-10 でも試す
+            const result = await getBookByIsbn(cleaned);
+            if (!result.book) {
+              setMessage({ type: "error", text: "この本は蔵書に登録されていません。先にスキャンページで登録してください。" });
+              setProcessing(false);
+              return;
             }
+            // 単一結果で処理
+            copies.push(result.book);
+          }
+
+          // 未入庫のコピーを優先して入庫
+          const unassigned = copies.find((c) => !c.shelf_id);
+          const targetBook = unassigned || copies[0];
+          const totalQuantity = copies.reduce((sum, c) => sum + (c.quantity || 1), 0);
+          const shelvedCount = copies.filter((c) => c.shelf_id !== null).length;
+
+          // 既に全冊入庫済みの場合
+          if (!unassigned && shelvedCount >= totalQuantity) {
+            const shelfNames = copies
+              .filter((c) => c.shelf_id)
+              .map((c) => {
+                const s = shelves.find((s) => s.id === c.shelf_id);
+                return s ? s.name : "不明";
+              });
+            setMessage({
+              type: "error",
+              text: `「${targetBook.title}」は所有数${totalQuantity}冊が全て入庫済みです (${shelfNames.join(", ")})。品数を増やすか確認してください。`,
+            });
+            setProcessing(false);
+            return;
+          }
+
+          const assignResult = await assignBookToShelf(targetBook.id, selectedShelf.id);
+          if (assignResult.error) {
+            setMessage({ type: "error", text: assignResult.error });
           } else {
-            setMessage({ type: "error", text: "この本は蔵書に登録されていません。先にスキャンページで登録してください。" });
+            const isDup = assignResult.duplicateCreated;
+            const infoTag = isDup ? " [複数所有コピー]" : "";
+            const warningText = assignResult.warning ? ` (${assignResult.warning})` : "";
+            setMessage({
+              type: "success",
+              text: `「${targetBook.title}」を「${selectedShelf.name}」に入庫しました${warningText}${infoTag}`,
+            });
+            setLog((prev) => [
+              {
+                id: `${Date.now()}`,
+                bookTitle: `${targetBook.title}${isDup ? " [コピー]" : ""}`,
+                shelfName: selectedShelf.name,
+                action: "checkin",
+                time: new Date().toLocaleTimeString("ja-JP"),
+              },
+              ...prev,
+            ]);
           }
         }
       }
